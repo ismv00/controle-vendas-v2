@@ -1,0 +1,18 @@
+export const PRODUCT_CATEGORIES = [
+  'Blocos',
+  'Sacolas',
+  'Agendas',
+  'Cadernos',
+  'Planner',
+  'Devocional',
+  'Adesivo',
+  'Kit Curso Basico',
+  'kit curso Top',
+  'Caixa Cartonada',
+  'Card',
+  'Mimo',
+  'Calendario',
+  'Marcador Magnetico',
+  'Combo',
+  'Caderneta Saude',
+];
