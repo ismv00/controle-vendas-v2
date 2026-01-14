@@ -5,7 +5,12 @@ import { useEffect, useState } from 'react';
 import { Modal } from '@/src/components/ui/Modal';
 import { ClientForm } from '@/src/components/Clients/ClientForm';
 import { ClientList } from '@/src/components/Clients/ClientList';
-import { getClientsByUser, createClient, updateClient } from '@/src/services/clientService';
+import {
+  getClientsByUser,
+  createClient,
+  updateClient,
+  deleteClient,
+} from '@/src/services/clientService';
 import { Client } from '@/src/types/Client';
 
 const USER_ID = 'wSkNQJ8eyFh6FL4E1Z51vfopnQc2';
@@ -63,6 +68,16 @@ export default function ClientsPage() {
     }
   }, []);
 
+  async function handleDeleteClient(id: string) {
+    const confirmDelete = confirm('Tem certeza que deseja excluir este cliente?');
+
+    if (!confirmDelete) return;
+
+    await deleteClient(id);
+
+    setClients((prev) => prev.filter((client) => client.id !== id));
+  }
+
   return (
     <>
       {/* Header */}
@@ -90,6 +105,7 @@ export default function ClientsPage() {
             setEditingClient(client);
             setOpen(true);
           }}
+          onDelete={handleDeleteClient}
         />
       )}
 

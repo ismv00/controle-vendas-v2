@@ -4,6 +4,7 @@ import { ShoppingCart, DollarSign, TrendingUp, BarChart3, Package, Users } from 
 import { useEffect, useState } from 'react';
 import { getAllProducts } from '@/src/services/productService';
 import { StatCard } from './StatCard';
+import { getAllClients } from '@/src/services/clientService';
 
 const MOCK_USER_ID = 'wSkNQJ8eyFh6FL4E1Z51vfopnQc2';
 
@@ -14,7 +15,9 @@ export function StatsGrid() {
   useEffect(() => {
     async function loadStats() {
       const products = await getAllProducts(MOCK_USER_ID);
+      const clients = await getAllClients(MOCK_USER_ID);
       setProductsCount(products.length);
+      setClientsCount(clients.length);
     }
 
     loadStats();
@@ -57,7 +60,12 @@ export function StatsGrid() {
         iconBg="bg-gray-100"
       />
 
-      <StatCard title="Clientes Cadastrados" value={0} icon={Users} iconBg="bg-gray-100" />
+      <StatCard
+        title="Clientes Cadastrados"
+        value={clientsCount}
+        icon={Users}
+        iconBg="bg-gray-100"
+      />
     </section>
   );
 }

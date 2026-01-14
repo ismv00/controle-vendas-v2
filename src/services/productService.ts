@@ -39,7 +39,7 @@ export async function getProductsByUser(userId: string): Promise<Product[]> {
     };
   });
 
-  // ✅ ORDENAÇÃO ALFABÉTICA AQUI
+  //  ORDENAÇÃO ALFABÉTICA AQUI
   return products.sort((a, b) => a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' }));
 }
 export async function deleteProduct(id: string) {
