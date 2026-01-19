@@ -2,13 +2,14 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutGrid, ShoppingBag, Package, Users, icons, Icon } from 'lucide-react';
+import { LayoutGrid, ShoppingBag, Package, Users, Tags } from 'lucide-react';
 
 const items = [
   { label: 'Dashboard', href: '/', icon: LayoutGrid },
-  { label: 'Vendas', href: '/vendas', icon: ShoppingBag },
-  { label: 'Produtos', href: '/produtos', icon: Package },
   { label: 'Clientes', href: '/clients', icon: Users },
+  { label: 'Produtos', href: '/produtos', icon: Package },
+  { label: 'Tabela de Preços', href: '/price-table', icon: Tags },
+  { label: 'Vendas', href: '/vendas', icon: ShoppingBag },
 ];
 
 export function NavMenu() {
@@ -23,9 +24,8 @@ export function NavMenu() {
           <Link
             key={href}
             href={href}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition ${
-              isActive ? 'bg-white shadow text-blue-600' : 'text-gray-600 hover:text-gray-900'
-            }`}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition ${isActive ? 'bg-white shadow text-blue-600' : 'text-gray-600 hover:text-gray-900'
+              }`}
           >
             <Icon size={16} />
             {label}

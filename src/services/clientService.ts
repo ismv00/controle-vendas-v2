@@ -66,3 +66,7 @@ export async function updateClient(id: string, data: Partial<Omit<Client, 'id' |
 export async function deleteClient(id: string) {
   await deleteDoc(doc(db, COLLECTION, id));
 }
+
+export async function getAllClients(userId: string): Promise<Client[]> {
+  return getClientsByUser(userId);
+}

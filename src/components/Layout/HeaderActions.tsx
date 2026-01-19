@@ -24,7 +24,10 @@ export function HeaderActions() {
         Novo Cliente
       </button>
 
-      <button className="btn-primary flex items-center gap-2">
+      <button
+        className="btn-primary flex items-center gap-2"
+        onClick={() => router.push('/vendas?novo=true')}
+      >
         <ShoppingCart size={16} />
         Nova Venda
       </button>
