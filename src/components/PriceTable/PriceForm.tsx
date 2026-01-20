@@ -72,11 +72,18 @@ export function PriceForm({ products, initialData, onSubmit }: Props) {
     }
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-6">
             {/* PRODUTO */}
             <div>
-                <label className="block text-sm font-medium mb-1">Produto</label>
-                <select className="input" value={productId} onChange={(e) => setProductId(e.target.value)}
+                <label className="block text-xs font-medium text-gray-600 mb-1">
+                    Produto
+                </label>
+
+                <select
+                    className="w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm
+                       focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    value={productId}
+                    onChange={(e) => setProductId(e.target.value)}
                     required
                     disabled={!!initialData}
                 >
@@ -89,42 +96,66 @@ export function PriceForm({ products, initialData, onSubmit }: Props) {
                 </select>
             </div>
 
-            {/* CUSTO */}
-            <div>
-                <label className="block text-sm font-medium mb-1">Preço de custo</label>
-                <input type="number" className="input bg-gray-100" value={cost} disabled />
-            </div>
+            {/* GRID DE VALORES */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* CUSTO */}
+                <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                        Preço de custo
+                    </label>
+                    <input
+                        type="number"
+                        className="w-full rounded-lg border border-gray-300 bg-gray-100 px-3 py-2 text-sm"
+                        value={cost}
+                        disabled
+                    />
+                </div>
 
-            {/* DESPESA */}
-            <div>
-                <label className="block text-sm font-medium mb-1">Despesa Operacional</label>
-                <input type="number" step="0.01" className="input" value={operationalExpensePercent} onChange={(e) => setOperationalExpensePercent(Number(e.target.value))} />
-            </div>
+                {/* DESPESA */}
+                <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                        Despesa Operacional (%)
+                    </label>
+                    <input
+                        type="number"
+                        step="0.01"
+                        className="w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm
+                           focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        value={operationalExpensePercent}
+                        onChange={(e) => setOperationalExpensePercent(Number(e.target.value))}
+                    />
+                </div>
 
-            {/* MARGEM */}
-            <div>
-                <label className="block text-sm font-medium mb-1">
-                    Margem de venda (%)
-                </label>
-                <input type="number" step="0.01" className="input" value={marginPercent}
-                    onChange={(e) => setMarginPercent(Number(e.target.value))}
-                />
+                {/* MARGEM */}
+                <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                        Margem de venda (%)
+                    </label>
+                    <input
+                        type="number"
+                        step="0.01"
+                        className="w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm
+                           focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        value={marginPercent}
+                        onChange={(e) => setMarginPercent(Number(e.target.value))}
+                    />
+                </div>
             </div>
 
             {/* RESULTADO */}
-            <div className="border-t pt-3 text-sm">
-                <p>Preço de venda: {' '}
-                    <span className="font-semibold">R$ {salePrice.toFixed(2)}</span>
+            <div className="bg-gray-50 rounded-lg p-4 border text-sm">
+                <p className="text-gray-600">
+                    Preço de venda
+                </p>
+                <p className="text-lg font-semibold text-green-600">
+                    R$ {salePrice.toFixed(2)}
                 </p>
             </div>
 
-            {/* ACOES */}
-            <div className="flex justify-end">
-                <button
-                    type="submit" className="btn-primary"
-                >
-                    {initialData ? 'Atualizar Preço' : 'Salvar Preço'}
-
+            {/* FOOTER */}
+            <div className="flex justify-end pt-4 border-t">
+                <button type="submit" className="btn-primary px-6">
+                    {initialData ? 'Salvar alterações' : 'Salvar Preço'}
                 </button>
             </div>
         </form>

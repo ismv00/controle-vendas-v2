@@ -1,6 +1,13 @@
 'use client';
 
-import { ShoppingCart, DollarSign, TrendingUp, BarChart3, Package, Users } from 'lucide-react';
+import {
+  ShoppingCart,
+  DollarSign,
+  TrendingUp,
+  BarChart3,
+  Package,
+  Users,
+} from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { getAllProducts } from '@/src/services/productService';
 import { StatCard } from './StatCard';
@@ -15,7 +22,7 @@ interface Props {
   period: Period;
 }
 
-export function StatsGrid() {
+export function StatsGrid({ period }: Props) {
   const [productsCount, setProductsCount] = useState(0);
   const [clientsCount, setClientsCount] = useState(0);
   const [salesCount, setSalesCount] = useState(0);
@@ -39,13 +46,13 @@ export function StatsGrid() {
 
     if (period === 'month') {
       return (
-        date.getMonth() == now.getMonth() &&
+        date.getMonth() === now.getMonth() &&
         date.getFullYear() === now.getFullYear()
       );
     }
 
     if (period === 'year') {
-      return date.getFullYear() === now.getFullYear()
+      return date.getFullYear() === now.getFullYear();
     }
 
     return true;
@@ -55,21 +62,29 @@ export function StatsGrid() {
     async function loadStats() {
       const products = await getAllProducts(MOCK_USER_ID);
       const clients = await getAllClients(MOCK_USER_ID);
-      const sales = await getAllSales(MOCK_USER_ID)
+      const sales = await getAllSales(MOCK_USER_ID);
 
       setProductsCount(products.length);
       setClientsCount(clients.length);
-      setSalesCount(sales.length);
 
-      const totalRevenue = sales.reduce(
-        (sum, sale) => sum + sale.totalValue, 0
+      const filteredSales = sales.filter((sale) =>
+        isSaleInPeriod(new Date(sale.createdAt), period)
       );
 
-      const totalProfit = sales.reduce(
-        (sum, sale) => sum + sale.totalProfit, 0
+      setSalesCount(filteredSales.length);
+
+      const totalRevenue = filteredSales.reduce(
+        (sum, sale) => sum + sale.totalValue,
+        0
       );
 
-      const marginPercent = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
+      const totalProfit = filteredSales.reduce(
+        (sum, sale) => sum + sale.totalProfit,
+        0
+      );
+
+      const marginPercent =
+        totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
 
       setRevenue(totalRevenue);
       setProfit(totalProfit);
@@ -77,10 +92,16 @@ export function StatsGrid() {
     }
 
     loadStats();
-  }, []);
+  }, [period]);
+
   return (
     <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-      <StatCard title="Total de Vendas" value={salesCount} icon={ShoppingCart} iconBg="bg-gray-100" />
+      <StatCard
+        title="Total de Vendas"
+        value={salesCount}
+        icon={ShoppingCart}
+        iconBg="bg-gray-100"
+      />
 
       <StatCard
         title="Faturamento"
@@ -116,7 +137,12 @@ export function StatsGrid() {
         iconBg="bg-gray-100"
       />
 
-      <StatCard title="Clientes Cadastrados" value={clientsCount} icon={Users} iconBg="bg-gray-100" />
+      <StatCard
+        title="Clientes Cadastrados"
+        value={clientsCount}
+        icon={Users}
+        iconBg="bg-gray-100"
+      />
     </section>
   );
 }

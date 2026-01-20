@@ -32,7 +32,7 @@ export function Dashboard() {
       </div>
 
       {/* Estatísticas */}
-      <StatsGrid />
+      <StatsGrid period={period} />
 
 
     </div>

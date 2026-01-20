@@ -7,7 +7,7 @@ import { PriceForm } from '@/src/components/PriceTable/PriceForm';
 import { PriceList } from '@/src/components/PriceTable/PriceList';
 
 import { getProductsByUser } from '@/src/services/productService';
-import { getProductPricesByUser, createProductPrice } from '@/src/services/priceService';
+import { getProductPricesByUser, createProductPrice, deleteProductPrice, updateProductPrice } from '@/src/services/priceService';
 
 import { Product } from '@/src/types/Product';
 import { ProductPrice } from '@/src/types/ProductPrice';
@@ -20,6 +20,8 @@ export default function PriceTablePage() {
     const [prices, setPrices] = useState<ProductPrice[]>([]);
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState(false);
+
+    const [editingPrice, setEditingPrice] = useState<ProductPrice | null>(null);
 
     async function loadData() {
         setLoading(true);
@@ -39,13 +41,32 @@ export default function PriceTablePage() {
     }, []);
 
     async function handleCreatePrice(data: ProductPriceFormData) {
-        await createProductPrice({
-            ...data,
-            userId: USER_ID,
-        });
+        if (editingPrice) {
+            await updateProductPrice(editingPrice.id, data);
+
+        } else {
+            await createProductPrice({
+                ...data,
+                userId: USER_ID
+            })
+        }
 
         setOpen(false);
+        setEditingPrice(null);
         loadData();
+    }
+
+    async function handleDeletePrice(id: string) {
+        const confirm = window.confirm("Deseja realmente excluir este preço?")
+        if (!confirm) return;
+
+        await deleteProductPrice(id);
+        loadData()
+    }
+
+    function handleEditPrice(price: ProductPrice) {
+        setEditingPrice(price);
+        setOpen(true)
     }
 
     return (
@@ -54,7 +75,10 @@ export default function PriceTablePage() {
             <div className="flex items-center justify-between mb-6">
                 <h1 className="text-xl font-semibold">Tabela de Preços</h1>
 
-                <button className="btn-primary" onClick={() => setOpen(true)}>
+                <button className="btn-primary" onClick={() => {
+                    setEditingPrice(null)
+                    setOpen(true);
+                }}>
                     Novo Preço
                 </button>
             </div>
@@ -63,12 +87,20 @@ export default function PriceTablePage() {
             {loading ? (
                 <p className="text-sm text-gray-500">Carregando preços...</p>
             ) : (
-                <PriceList prices={prices} />
+                <PriceList prices={prices} onEdit={handleEditPrice} onDelete={handleDeletePrice} />
             )}
 
             {/* MODAL */}
-            <Modal open={open} title="Novo Preço" onClose={() => setOpen(false)}>
-                <PriceForm products={products} onSubmit={handleCreatePrice} />
+            <Modal open={open} title={editingPrice ? 'Editar Preço' : 'Novo Preço'
+            } onClose={() => {
+                setOpen(false)
+                setEditingPrice(null);
+            }}>
+                <PriceForm
+                    products={products}
+                    onSubmit={handleCreatePrice}
+                    initialData={editingPrice}
+                />
             </Modal>
         </>
     );
