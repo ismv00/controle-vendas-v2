@@ -1,41 +1,40 @@
-'use client'
+'use client';
 
-import { usePathname } from "next/navigation"
-import { Header } from "./Header"
-import { NavMenu } from "./NavMenu";
+import { usePathname } from 'next/navigation';
+import { Header } from './Header';
+import { NavMenu } from './NavMenu';
 
 interface Props {
-    children: React.ReactNode;
+  children: React.ReactNode;
 }
 
 export function LayoutWrapper({ children }: Props) {
-    const pathname = usePathname()
+  const pathname = usePathname();
+  const authPages = ['/login', '/register', '/forgot-password'];
 
-    const isAuthPage = pathname === '/login';
+  const isAuthPage = authPages.includes(pathname);
 
-    return (
+  return (
+    <>
+      {!isAuthPage && (
         <>
-            {!isAuthPage && (
-                <>
-                    <header className="bg-white border-b border-gray-100">
-                        <div className="max-w-7xl mx-auto px-6 py-6">
-                            <Header />
-                        </div>
-                    </header>
+          <header className="bg-white border-b border-gray-100">
+            <div className="max-w-7xl mx-auto px-6 py-6">
+              <Header />
+            </div>
+          </header>
 
-                    <nav className="bg-white border-b border-gray-100">
-                        <div className="max-w-7xl mx-auto px-6 py-4 justify-center ">
-                            <NavMenu />
-                        </div>
-                    </nav>
-                </>
-            )}
-
-            <main className="bg-gray-50 min-h-screen mt-8">
-                <div className="max-w-7xl mx-auto px-6">
-                    {children}
-                </div>
-            </main>
+          <nav className="bg-white border-b border-gray-100">
+            <div className="max-w-7xl mx-auto px-6 py-4 justify-center ">
+              <NavMenu />
+            </div>
+          </nav>
         </>
-    )
+      )}
+
+      <main className="bg-gray-50 min-h-screen mt-8">
+        <div className="max-w-7xl mx-auto px-6">{children}</div>
+      </main>
+    </>
+  );
 }

@@ -7,24 +7,20 @@ import { ClientForm } from '@/src/components/Clients/ClientForm';
 import { ClientList } from '@/src/components/Clients/ClientList';
 import { getClientsByUser, createClient, updateClient } from '@/src/services/clientService';
 import { Client } from '@/src/types/Client';
-
-const USER_ID = 'wSkNQJ8eyFh6FL4E1Z51vfopnQc2';
+import { useAuth } from '@/src/contexts/AuthContext';
 
 export default function ClientsPage() {
+  const { user, loading: authLoading } = useAuth();
+
   const [clients, setClients] = useState<Client[]>([]);
-  const [open, setOpen] = useState(false);
+
   const [loading, setLoading] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
 
   const searchParams = useSearchParams();
-  const openNew = searchParams.get('novo');
+  const openNew = searchParams.get('novo') === 'true';
 
-  async function loadClients() {
-    setLoading(true);
-    const data = await getClientsByUser(USER_ID);
-    setClients(data);
-    setLoading(false);
-  }
+  const [open, setOpen] = useState(openNew);
 
   async function handleAddOrEditClient(data: {
     name: string;
@@ -32,16 +28,16 @@ export default function ClientsPage() {
     address: string;
     phone: string;
   }) {
+    if (!user) return;
+
     if (editingClient) {
-      // Editar
       await updateClient(editingClient.id, data);
 
       setClients((prev) => prev.map((c) => (c.id === editingClient.id ? { ...c, ...data } : c)));
     } else {
-      //  Criar
       const newClient = {
         ...data,
-        userId: USER_ID,
+        userId: user.uid,
         createdAt: new Date(),
       };
 
@@ -55,13 +51,27 @@ export default function ClientsPage() {
   }
 
   useEffect(() => {
-    loadClients();
+    if (authLoading || !user) return;
 
-    if (openNew === 'true') {
-      setEditingClient(null);
-      setOpen(true);
+    let active = true;
+
+    async function fetchClients() {
+      setLoading(true);
+
+      const data = await getClientsByUser(user!.uid);
+
+      if (active) {
+        setClients(data);
+        setLoading(false);
+      }
     }
-  }, []);
+
+    fetchClients();
+
+    return () => {
+      active = false;
+    };
+  }, [user, authLoading, openNew]);
 
   return (
     <>

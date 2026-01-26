@@ -1,8 +1,8 @@
-'use client'
+'use client';
 
-import { useEffect } from "react"
-import { useAuth } from "@/src/contexts/AuthContext"
-import { useRouter } from "next/navigation"
+import { useEffect } from 'react';
+import { useAuth } from '@/src/contexts/AuthContext';
+import { useRouter } from 'next/navigation';
 
 export default function Home() {
   const { user, loading } = useAuth();
@@ -11,11 +11,7 @@ export default function Home() {
   useEffect(() => {
     if (loading) return;
 
-    if (!user) {
-      router.replace('/login');
-    } else {
-      router.replace('/dashboard');
-    }
+    router.replace(user ? '/dashboard' : '/login');
   }, [user, loading, router]);
 
   return null;
