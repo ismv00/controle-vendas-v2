@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react';
-
 import { StatsGrid } from './StatsGrid';
 
 type Period = 'today' | 'month' | 'year' | 'all';

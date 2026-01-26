@@ -2,8 +2,9 @@ import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 
-import { Header } from '@/src/components/Layout/Header';
-import { NavMenu } from '@/src/components/Layout/NavMenu';
+
+import { AuthProvider } from '@/src/contexts/AuthContext';
+import { LayoutWrapper } from '@/src/components/Layout/LayoutWrapper';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -23,25 +24,14 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="pt-BR">
-      <body className="antialiased font-sans bg-gray-50">
-        {/* Header */}
-        <header className="bg-white border-b border-gray-100">
-          <div className="max-w-7xl mx-auto px-6 py-6">
-            <Header />
-          </div>
-        </header>
+      <body className={`antialiased font-sans bg-gray-50  ${geistSans.variable} ${geistMono.variable}`}>
 
-        {/* Navigation */}
-        <nav className="bg-white border-b border-gray-100">
-          <div className="max-w-7xl mx-auto px-6 py-4 flex justify-center">
-            <NavMenu />
-          </div>
-        </nav>
+        <AuthProvider>
+          <LayoutWrapper>
+            {children}
+          </LayoutWrapper>
+        </AuthProvider>
 
-        {/* Main content */}
-        <main className="bg-gray-50 min-h-screen mt-8">
-          <div className="max-w-7xl mx-auto px-6">{children}</div>
-        </main>
       </body>
     </html>
   );

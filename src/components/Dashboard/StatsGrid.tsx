@@ -9,12 +9,12 @@ import {
   Users,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+
 import { getAllProducts } from '@/src/services/productService';
-import { StatCard } from './StatCard';
 import { getAllClients } from '@/src/services/clientService';
 import { getAllSales } from '@/src/services/saleService';
-
-const MOCK_USER_ID = 'wSkNQJ8eyFh6FL4E1Z51vfopnQc2';
+import { useAuth } from '@/src/contexts/AuthContext';
+import { StatCard } from './StatCard';
 
 type Period = 'today' | 'month' | 'year' | 'all';
 
@@ -23,6 +23,8 @@ interface Props {
 }
 
 export function StatsGrid({ period }: Props) {
+  const { user, loading: authLoading } = useAuth();
+
   const [productsCount, setProductsCount] = useState(0);
   const [clientsCount, setClientsCount] = useState(0);
   const [salesCount, setSalesCount] = useState(0);
@@ -59,10 +61,16 @@ export function StatsGrid({ period }: Props) {
   }
 
   useEffect(() => {
+    if (authLoading || !user) return;
+
     async function loadStats() {
-      const products = await getAllProducts(MOCK_USER_ID);
-      const clients = await getAllClients(MOCK_USER_ID);
-      const sales = await getAllSales(MOCK_USER_ID);
+      const userId = user!.uid;
+
+      const [products, clients, sales] = await Promise.all([
+        getAllProducts(userId),
+        getAllClients(userId),
+        getAllSales(userId),
+      ]);
 
       setProductsCount(products.length);
       setClientsCount(clients.length);
@@ -92,7 +100,7 @@ export function StatsGrid({ period }: Props) {
     }
 
     loadStats();
-  }, [period]);
+  }, [period, user, authLoading]);
 
   return (
     <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">

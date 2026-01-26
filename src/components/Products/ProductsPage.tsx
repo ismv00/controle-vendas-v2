@@ -11,23 +11,33 @@ import {
   deleteProduct,
 } from '@/src/services/productService';
 import { Product } from '@/src/types/Product';
+import { useAuth } from '@/src/contexts/AuthContext';
 
-const USER_ID = 'wSkNQJ8eyFh6FL4E1Z51vfopnQc2';
+
+
+
 
 export default function ProductsPage() {
+
+  const { user, loading: authLoading } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
   async function loadProducts() {
+
+    if (!user) return;
+
     setLoading(true);
-    const data = await getProductsByUser(USER_ID);
+    const data = await getProductsByUser(user.uid);
     setProducts(data);
     setLoading(false);
   }
 
   async function handleAddOrEditProduct(data: { name: string; category: string; cost: number }) {
+    if (!user) return;
+
     if (editingProduct) {
       await updateProduct(editingProduct.id, {
         name: data.name,
@@ -39,7 +49,7 @@ export default function ProductsPage() {
         name: data.name,
         category: data.category,
         cost: data.cost,
-        userId: USER_ID,
+        userId: user.uid,
         createdAt: new Date(),
       });
     }
@@ -60,8 +70,9 @@ export default function ProductsPage() {
   }
 
   useEffect(() => {
+    if (authLoading || !user) return;
     loadProducts();
-  }, []);
+  }, [authLoading, user]);
 
   return (
     <>

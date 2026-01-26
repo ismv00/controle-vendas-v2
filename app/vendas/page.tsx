@@ -15,9 +15,13 @@ import { Sale } from '@/src/types/Sale';
 import { Client } from '@/src/types/Client';
 import { Product } from '@/src/types/Product';
 
-const USER_ID = 'wSkNQJ8eyFh6FL4E1Z51vfopnQc2';
+import { useAuth } from '@/src/contexts/AuthContext';
+
+
 
 export default function SalesPage() {
+  const { user, loading: authLoading } = useAuth();
+
   const [clients, setClients] = useState<Client[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [sales, setSales] = useState<Sale[]>([]);
@@ -27,14 +31,14 @@ export default function SalesPage() {
 
   const [prices, setPrices] = useState<ProductPrice[]>([]);
 
-  async function loadData() {
+  async function loadData(userId: string) {
     setLoading(true);
 
     const [salesData, clientsData, productsData, pricesData] = await Promise.all([
-      getSalesByUser(USER_ID),
-      getClientsByUser(USER_ID),
-      getProductsByUser(USER_ID),
-      getProductPricesByUser(USER_ID)
+      getSalesByUser(userId),
+      getClientsByUser(userId),
+      getProductsByUser(userId),
+      getProductPricesByUser(userId)
     ]);
 
     setSales(salesData);
@@ -46,8 +50,9 @@ export default function SalesPage() {
   }
 
   useEffect(() => {
-    loadData();
-  }, []);
+    if (authLoading || !user) return;
+    loadData(user.uid);
+  }, [authLoading, user]);
 
 
   async function handleSaveSale(data: any) {
@@ -60,11 +65,11 @@ export default function SalesPage() {
     } else {
       await createSale({
         ...data,
-        userId: USER_ID,
+        userId: user!.uid,
         createdAt: new Date(),
       });
 
-      loadData();
+      loadData(user!.uid);
     }
 
     setEditingSale(null);
