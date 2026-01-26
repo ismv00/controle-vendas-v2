@@ -14,13 +14,11 @@ import { db } from '../lib/firebase';
 import { Sale } from '../types/Sale';
 
 const COLLECTION = 'sales';
-const MOCK_USER_ID = 'wSkNQJ8eyFh6FL4E1Z51vfopnQc2';
 
 // Criar a venda
 export async function createSale(sale: Omit<Sale, 'id' | 'createdAt'>) {
   const payload = {
     ...sale,
-    userId: MOCK_USER_ID,
     createdAt: new Date(),
   };
 
@@ -60,11 +58,11 @@ export async function getSalesByUser(userId: string): Promise<Sale[]> {
 }
 
 //Atualizar venda
-export async function updateSale(id:string, data: Partial<Sale>) {
+export async function updateSale(id: string, data: Partial<Sale>) {
   await updateDoc(doc(db, COLLECTION, id), {
     ...data,
     updatedAt: new Date(),
-  })
+  });
 }
 
 //Excluir Venda

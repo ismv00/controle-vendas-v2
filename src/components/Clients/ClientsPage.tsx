@@ -7,19 +7,28 @@ import { ClientList } from './ClientList';
 
 import { useAuth } from '@/src/contexts/AuthContext';
 
-
 export default function ClientsPage() {
   const { user, loading: authLoading } = useAuth();
   const [clients, setClients] = useState<Client[]>([]);
 
-  async function loadCLients(userId: string) {
-    const data = await getClientsByUser(userId);
-    setClients(data);
-  }
-
   useEffect(() => {
     if (authLoading || !user) return;
-    loadCLients(user.uid);
+
+    let cancelled = false;
+
+    async function fetchClients() {
+      if (!user) return;
+      const data = await getClientsByUser(user.uid);
+      if (!cancelled) {
+        setClients(data);
+      }
+    }
+
+    void fetchClients();
+
+    return () => {
+      cancelled = true;
+    };
   }, [authLoading, user]);
 
   function handleEdit(client: Client) {

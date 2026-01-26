@@ -11,13 +11,11 @@ import { getProductsByUser } from '@/src/services/productService';
 import { getProductPricesByUser } from '@/src/services/priceService';
 import { ProductPrice } from '@/src/types/ProductPrice';
 
-import { Sale } from '@/src/types/Sale';
+import { Sale, SaleItem } from '@/src/types/Sale';
 import { Client } from '@/src/types/Client';
 import { Product } from '@/src/types/Product';
 
 import { useAuth } from '@/src/contexts/AuthContext';
-
-
 
 export default function SalesPage() {
   const { user, loading: authLoading } = useAuth();
@@ -38,7 +36,7 @@ export default function SalesPage() {
       getSalesByUser(userId),
       getClientsByUser(userId),
       getProductsByUser(userId),
-      getProductPricesByUser(userId)
+      getProductPricesByUser(userId),
     ]);
 
     setSales(salesData);
@@ -51,29 +49,69 @@ export default function SalesPage() {
 
   useEffect(() => {
     if (authLoading || !user) return;
-    loadData(user.uid);
+
+    let cancelled = false;
+
+    async function fetchData() {
+      if (!user) return;
+
+      setLoading(true);
+
+      const [salesData, clientsData, productsData, pricesData] = await Promise.all([
+        getSalesByUser(user.uid),
+        getClientsByUser(user.uid),
+        getProductsByUser(user.uid),
+        getProductPricesByUser(user.uid),
+      ]);
+
+      if (!cancelled) {
+        setSales(salesData);
+        setClients(clientsData);
+        setProducts(productsData);
+        setPrices(pricesData);
+        setLoading(false);
+      }
+    }
+
+    void fetchData();
+
+    return () => {
+      cancelled = true;
+    };
   }, [authLoading, user]);
 
+  async function handleSaveSale(data: {
+    clientId: string;
+    clientName: string;
+    items: SaleItem[];
+    totalItems: number;
+    totalValue: number;
+    totalProfit: number;
+  }) {
+    // Calculate totalCost from items
+    const totalCost = data.items.reduce((sum, item) => sum + item.cost * item.quantity, 0);
 
-  async function handleSaveSale(data: any) {
     if (editingSale) {
-      await updateSale(editingSale.id, data)
+      await updateSale(editingSale.id, {
+        ...data,
+        totalCost,
+      });
 
       setSales((prev) =>
-        prev.map((s) => (s.id === editingSale.id ? { ...s, ...data } : s))
+        prev.map((s) => (s.id === editingSale.id ? { ...s, ...data, totalCost } : s))
       );
     } else {
       await createSale({
         ...data,
+        totalCost,
         userId: user!.uid,
-        createdAt: new Date(),
       });
 
       loadData(user!.uid);
     }
 
     setEditingSale(null);
-    setOpen(false)
+    setOpen(false);
   }
 
   async function handleDeleteSale(id: string) {
@@ -82,12 +120,12 @@ export default function SalesPage() {
 
     deleteSale(id)
       .then(() => {
-        setSales((prev) => prev.filter((sale) => sale.id !== id))
+        setSales((prev) => prev.filter((sale) => sale.id !== id));
       })
       .catch((error) => {
-        console.error(error)
-        alert('Erro ao excluir a venda')
-      })
+        console.error(error);
+        alert('Erro ao excluir a venda');
+      });
   }
 
   return (
@@ -105,10 +143,14 @@ export default function SalesPage() {
       {loading ? (
         <p className="text-sm text-gray-500">Carregando vendas...</p>
       ) : (
-        <SaleList sales={sales} onDelete={handleDeleteSale} onEdit={(sale) => {
-          setEditingSale(sale);
-          setOpen(true)
-        }} />
+        <SaleList
+          sales={sales}
+          onDelete={handleDeleteSale}
+          onEdit={(sale) => {
+            setEditingSale(sale);
+            setOpen(true);
+          }}
+        />
       )}
 
       {/* MODAL */}
@@ -116,13 +158,17 @@ export default function SalesPage() {
         open={open}
         title={editingSale ? 'Editar Venda' : 'Nova Venda'}
         onClose={() => {
-          setOpen(false)
-          setEditingSale(null)
-        }}>
-
-        <SaleForm clients={clients} products={products} prices={prices} initialData={editingSale} onSubmit={handleSaveSale} />
-
-
+          setOpen(false);
+          setEditingSale(null);
+        }}
+      >
+        <SaleForm
+          clients={clients}
+          products={products}
+          prices={prices}
+          initialData={editingSale}
+          onSubmit={handleSaveSale}
+        />
       </Modal>
     </>
   );

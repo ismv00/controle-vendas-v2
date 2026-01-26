@@ -7,101 +7,138 @@ import { PriceForm } from '@/src/components/PriceTable/PriceForm';
 import { PriceList } from '@/src/components/PriceTable/PriceList';
 
 import { getProductsByUser } from '@/src/services/productService';
-import { getProductPricesByUser, createProductPrice, deleteProductPrice, updateProductPrice } from '@/src/services/priceService';
+import {
+  getProductPricesByUser,
+  createProductPrice,
+  deleteProductPrice,
+  updateProductPrice,
+} from '@/src/services/priceService';
 
 import { Product } from '@/src/types/Product';
 import { ProductPrice } from '@/src/types/ProductPrice';
 import { ProductPriceFormData } from '@/src/types/ProductPriceForm';
 
-const USER_ID = 'wSkNQJ8eyFh6FL4E1Z51vfopnQc2';
+import { useAuth } from '@/src/contexts/AuthContext';
 
 export default function PriceTablePage() {
-    const [products, setProducts] = useState<Product[]>([]);
-    const [prices, setPrices] = useState<ProductPrice[]>([]);
-    const [open, setOpen] = useState(false);
-    const [loading, setLoading] = useState(false);
+  const { user, loading: authLoading } = useAuth();
 
-    const [editingPrice, setEditingPrice] = useState<ProductPrice | null>(null);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [prices, setPrices] = useState<ProductPrice[]>([]);
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-    async function loadData() {
-        setLoading(true);
+  const [editingPrice, setEditingPrice] = useState<ProductPrice | null>(null);
 
-        const [productsData, pricesData] = await Promise.all([
-            getProductsByUser(USER_ID),
-            getProductPricesByUser(USER_ID),
-        ]);
+  async function loadData() {
+    if (!user) return;
 
+    setLoading(true);
+
+    const [productsData, pricesData] = await Promise.all([
+      getProductsByUser(user.uid),
+      getProductPricesByUser(user.uid),
+    ]);
+
+    setProducts(productsData);
+    setPrices(pricesData);
+    setLoading(false);
+  }
+
+  useEffect(() => {
+    if (authLoading || !user) return;
+
+    let cancelled = false;
+
+    async function fetchData() {
+      if (!user) return;
+
+      setLoading(true);
+
+      const [productsData, pricesData] = await Promise.all([
+        getProductsByUser(user.uid),
+        getProductPricesByUser(user.uid),
+      ]);
+
+      if (!cancelled) {
         setProducts(productsData);
         setPrices(pricesData);
         setLoading(false);
+      }
     }
 
-    useEffect(() => {
-        loadData();
-    }, []);
+    void fetchData();
 
-    async function handleCreatePrice(data: ProductPriceFormData) {
-        if (editingPrice) {
-            await updateProductPrice(editingPrice.id, data);
+    return () => {
+      cancelled = true;
+    };
+  }, [user, authLoading]);
 
-        } else {
-            await createProductPrice({
-                ...data,
-                userId: USER_ID
-            })
-        }
+  async function handleCreatePrice(data: ProductPriceFormData) {
+    if (!user) return;
 
-        setOpen(false);
-        setEditingPrice(null);
-        loadData();
+    if (editingPrice) {
+      await updateProductPrice(editingPrice.id, data);
+    } else {
+      await createProductPrice({
+        ...data,
+        userId: user.uid,
+      });
     }
 
-    async function handleDeletePrice(id: string) {
-        const confirm = window.confirm("Deseja realmente excluir este preço?")
-        if (!confirm) return;
+    setOpen(false);
+    setEditingPrice(null);
+    loadData();
+  }
 
-        await deleteProductPrice(id);
-        loadData()
-    }
+  async function handleDeletePrice(id: string) {
+    const confirm = window.confirm('Deseja realmente excluir este preço?');
+    if (!confirm) return;
 
-    function handleEditPrice(price: ProductPrice) {
-        setEditingPrice(price);
-        setOpen(true)
-    }
+    await deleteProductPrice(id);
+    loadData();
+  }
 
-    return (
-        <>
-            {/* HEADER */}
-            <div className="flex items-center justify-between mb-6">
-                <h1 className="text-xl font-semibold">Tabela de Preços</h1>
+  function handleEditPrice(price: ProductPrice) {
+    setEditingPrice(price);
+    setOpen(true);
+  }
 
-                <button className="btn-primary" onClick={() => {
-                    setEditingPrice(null)
-                    setOpen(true);
-                }}>
-                    Novo Preço
-                </button>
-            </div>
+  return (
+    <>
+      {/* HEADER */}
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-xl font-semibold">Tabela de Preços</h1>
 
-            {/* LISTA */}
-            {loading ? (
-                <p className="text-sm text-gray-500">Carregando preços...</p>
-            ) : (
-                <PriceList prices={prices} onEdit={handleEditPrice} onDelete={handleDeletePrice} />
-            )}
+        <button
+          className="btn-primary"
+          onClick={() => {
+            setEditingPrice(null);
+            setOpen(true);
+          }}
+        >
+          Novo Preço
+        </button>
+      </div>
 
-            {/* MODAL */}
-            <Modal open={open} title={editingPrice ? 'Editar Preço' : 'Novo Preço'
-            } onClose={() => {
-                setOpen(false)
-                setEditingPrice(null);
-            }}>
-                <PriceForm
-                    products={products}
-                    onSubmit={handleCreatePrice}
-                    initialData={editingPrice}
-                />
-            </Modal>
-        </>
-    );
+      {/* LISTA */}
+      {loading ? (
+        <p className="text-sm text-gray-500">Carregando preços...</p>
+      ) : (
+        <PriceList prices={prices} onEdit={handleEditPrice} onDelete={handleDeletePrice} />
+      )}
+
+      {/* MODAL */}
+      <Modal
+        open={open}
+        title={editingPrice ? 'Editar Preço' : 'Novo Preço'}
+        onClose={() => {
+          setOpen(false);
+          setEditingPrice(null);
+        }}
+      >
+        <PriceForm products={products} onSubmit={handleCreatePrice} initialData={editingPrice} />
+      </Modal>
+    </>
+  );
 }

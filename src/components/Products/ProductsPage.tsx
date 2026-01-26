@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Modal } from '../ui/Modal';
 import { ProductForm } from '@/src/components/Products/ProductForm';
 import { ProductList } from '@/src/components/Products/ProductList';
@@ -13,27 +13,21 @@ import {
 import { Product } from '@/src/types/Product';
 import { useAuth } from '@/src/contexts/AuthContext';
 
-
-
-
-
 export default function ProductsPage() {
-
   const { user, loading: authLoading } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
-  async function loadProducts() {
-
+  const loadProducts = useCallback(async () => {
     if (!user) return;
 
     setLoading(true);
     const data = await getProductsByUser(user.uid);
     setProducts(data);
     setLoading(false);
-  }
+  }, [user]);
 
   async function handleAddOrEditProduct(data: { name: string; category: string; cost: number }) {
     if (!user) return;
@@ -71,7 +65,24 @@ export default function ProductsPage() {
 
   useEffect(() => {
     if (authLoading || !user) return;
-    loadProducts();
+
+    let cancelled = false;
+
+    async function fetchProducts() {
+      if (!user) return;
+      setLoading(true);
+      const data = await getProductsByUser(user.uid);
+      if (!cancelled) {
+        setProducts(data);
+        setLoading(false);
+      }
+    }
+
+    void fetchProducts();
+
+    return () => {
+      cancelled = true;
+    };
   }, [authLoading, user]);
 
   return (

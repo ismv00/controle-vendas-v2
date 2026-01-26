@@ -16,8 +16,6 @@ import { Client } from '../types/Client';
 
 const COLLECTION = 'clients';
 
-const MOCK_USER_ID = 'wSkNQJ8eyFh6FL4E1Z51vfopnQc2';
-
 export async function createClient(client: Omit<Client, 'id' | 'createdAt'>) {
   const payload = {
     name: client.name.toUpperCase(),
@@ -25,7 +23,7 @@ export async function createClient(client: Omit<Client, 'id' | 'createdAt'>) {
     address: client.address.toUpperCase(),
     phone: client.phone.toUpperCase(),
 
-    userId: MOCK_USER_ID,
+    userId: client.userId,
     createdAt: new Date(),
   };
 
@@ -53,7 +51,7 @@ export async function getClientsByUser(userId: string): Promise<Client[]> {
 }
 
 export async function updateClient(id: string, data: Partial<Omit<Client, 'id' | 'createdAt'>>) {
-  const payload: any = {};
+  const payload: Partial<Omit<Client, 'id' | 'createdAt'>> = {};
 
   if (data.name !== undefined) payload.name = data.name.toUpperCase();
   if (data.fantasy !== undefined) payload.fantasy = data.fantasy.toUpperCase();
