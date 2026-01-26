@@ -1,11 +1,13 @@
 import { Client } from '@/src/types/Client';
+import { Trash2 } from 'lucide-react';
 
 interface Props {
   clients: Client[];
   onEdit: (client: Client) => void;
+  onDelete: (client: Client) => void;
 }
 
-export function ClientList({ clients, onEdit }: Props) {
+export function ClientList({ clients, onEdit, onDelete }: Props) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-3  gap-4">
       {clients.map((client) => (
@@ -22,6 +24,13 @@ export function ClientList({ clients, onEdit }: Props) {
             onClick={() => onEdit(client)}
           >
             Editar
+          </button>
+
+          <button
+            className="text-sm text-blue-600 hover:underline mt-3"
+            onClick={() => onDelete(client)}
+          >
+            <Trash2 size={16} />
           </button>
         </div>
       ))}

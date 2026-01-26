@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Client } from '@/src/types/Client';
-import { getClientsByUser } from '@/src/services/clientService';
+import { getClientsByUser, deleteClient } from '@/src/services/clientService';
 import { ClientList } from './ClientList';
 
 import { useAuth } from '@/src/contexts/AuthContext';
@@ -35,11 +35,21 @@ export default function ClientsPage() {
     console.log('Editar cliente: ', client);
   }
 
+  async function handleDelete(client: Client) {
+    const confirmDelete = window.confirm(`Deseja realmente excluir o cliente "${client.name}" ?`);
+
+    if (!confirmDelete) return;
+
+    await deleteClient(client.id);
+
+    setClients((prev) => prev.filter((c) => c.id !== client.id));
+  }
+
   return (
     <div className="space-y-4">
       <h1 className="text-xl font-semibold">Clientes</h1>
 
-      <ClientList clients={clients} onEdit={handleEdit} />
+      <ClientList clients={clients} onEdit={handleEdit} onDelete={handleDelete} />
     </div>
   );
 }
