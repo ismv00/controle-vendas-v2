@@ -7,46 +7,75 @@ interface Props {
   onDelete: (id: string) => void;
 }
 
-export function SaleList({ sales, onDelete, onEdit }: Props) {
+export function SaleList({ sales, onEdit, onDelete }: Props) {
   if (!sales.length) {
-    return <p className="text-sm text-gray-500">Nenhuma venda registrada.</p>;
+    return (
+      <p className="text-sm text-gray-500">
+        Nenhuma venda registrada.
+      </p>
+    );
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      {sales.map((sale) => (
-        <div key={sale.id} className="bg-white border rounded-xl p-4">
-          {/* CLIENTE  */}
-          <h3 className="font-medium">{sale.clientName}</h3>
+    <div className="bg-white border rounded-xl overflow-hidden">
+      <table className="w-full text-sm">
+        <thead className="bg-gray-50 text-gray-500">
+          <tr>
+            <th className="px-4 py-3 text-left">Cliente</th>
+            <th className="px-4 py-3 text-left">Data</th>
+            <th className="px-4 py-3 text-left">Itens</th>
+            <th className="px-4 py-3 text-left">Total</th>
+            <th className="px-4 py-3 text-left">Lucro</th>
+            <th className="px-4 py-3 text-right">Ações</th>
+          </tr>
+        </thead>
 
-          {/* DATA */}
-          <p className="text-xs text-gray-400 mt-1">{sale.createdAt.toLocaleDateString('pt-BR')}</p>
+        <tbody>
+          {sales.map((sale) => (
+            <tr key={sale.id} className="border-t">
+              <td className="px-4 py-3 font-medium text-gray-900">
+                {sale.clientName}
+              </td>
 
-          {/* RESUMO */}
-          <div className="mt-3 space-y-1 text-sm">
-            <p>
-              Itens: <span className="font-medium">{sale.totalItems}</span>
-            </p>
+              <td className="px-4 py-3 text-gray-500">
+                {sale.createdAt.toLocaleDateString('pt-BR')}
+              </td>
 
-            <p>
-              Total: <span className="font-medium">R$ {sale.totalValue.toFixed(2)}</span>
-            </p>
+              <td className="px-4 py-3">
+                {sale.totalItems}
+              </td>
 
-            <p className="text-green-600">
-              Lucro: <span className="font-medium">R$ {sale.totalProfit.toFixed(2)}</span>
-            </p>
-          </div>
+              <td className="px-4 py-3 font-medium">
+                R$ {sale.totalValue.toFixed(2)}
+              </td>
 
-          <div className='flex gap-3 mt-4'>
+              <td className="px-4 py-3 font-semibold text-green-600">
+                R$ {sale.totalProfit.toFixed(2)}
+              </td>
 
-            <button onClick={() => onEdit(sale)} className='text-blue-600 hover:text-blue-800 ' title='Editar'>
-              <Pencil size={16} />
-            </button>
+              <td className="px-4 py-3">
+                <div className="flex justify-end gap-3">
+                  <button
+                    onClick={() => onEdit(sale)}
+                    className="text-blue-600 hover:text-blue-800 transition"
+                    title="Editar venda"
+                  >
+                    <Pencil size={16} />
+                  </button>
 
-            <button onClick={() => onDelete(sale.id)} className='text-red-600 hover:text-red-800' title='Excluir'><Trash2 size={16} /></button>
-          </div>
-        </div>
-      ))}
+                  <button
+                    onClick={() => onDelete(sale.id)}
+                    className="text-red-600 hover:text-red-800 transition"
+                    title="Excluir venda"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }

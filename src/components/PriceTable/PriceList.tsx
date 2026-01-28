@@ -17,73 +17,69 @@ export function PriceList({ prices, onEdit, onDelete }: Props) {
     }
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {prices.map((price) => (
-                <div
-                    key={price.id}
-                    className="bg-white border rounded-xl p-4 space-y-3"
-                >
-                    <div className="flex justify-between items-start">
-                        <h3 className="font-medium">
-                            {price.productName}
-                        </h3>
+        <div className="bg-white rounded-xl border overflow-hidden">
+            <table className="w-full text-sm">
+                <thead className="bg-gray-50 text-gray-500">
+                    <tr>
+                        <th className="px-4 py-3 text-left">Produto</th>
+                        <th className="px-4 py-3 text-left">Custo</th>
+                        <th className="px-4 py-3 text-left">Despesa</th>
+                        <th className="px-4 py-3 text-left">Margem</th>
+                        <th className="px-4 py-3 text-left">Preço de Venda</th>
+                        <th className="px-4 py-3 text-right">Ações</th>
+                    </tr>
+                </thead>
 
-                        <div className="flex gap-2">
-                            {onEdit && (
-                                <button
-                                    onClick={() => onEdit(price)}
-                                    className="text-blue-600 hover:text-blue-800"
-                                    title="Editar"
-                                >
-                                    <Pencil size={16} />
-                                </button>
-                            )}
+                <tbody>
+                    {prices.map((price) => (
+                        <tr key={price.id} className="border-t">
+                            <td className="px-4 py-3 font-medium text-gray-900">
+                                {price.productName}
+                            </td>
 
-                            {onDelete && (
-                                <button
-                                    onClick={() => onDelete(price.id)}
-                                    className="text-red-600 hover:text-red-800"
-                                    title="Excluir"
-                                >
-                                    <Trash2 size={16} />
-                                </button>
-                            )}
-                        </div>
-                    </div>
-
-                    <div className="text-sm text-gray-600 space-y-1">
-                        <p>
-                            Custo:{' '}
-                            <span className="font-medium">
+                            <td className="px-4 py-3 text-gray-600">
                                 R$ {price.cost.toFixed(2)}
-                            </span>
-                        </p>
+                            </td>
 
-                        <p>
-                            Despesa:{' '}
-                            <span className="font-medium">
+                            <td className="px-4 py-3 text-gray-600">
                                 {price.operationalExpensePercent}%
-                            </span>
-                        </p>
+                            </td>
 
-                        <p>
-                            Margem:{' '}
-                            <span className="font-medium">
+                            <td className="px-4 py-3 text-gray-600">
                                 {price.marginPercent}%
-                            </span>
-                        </p>
-                    </div>
+                            </td>
 
-                    <div className="pt-2 border-t text-sm">
-                        <p className="text-green-600">
-                            Preço de venda:{' '}
-                            <span className="font-semibold">
+                            <td className="px-4 py-3 font-semibold text-green-600">
                                 R$ {price.salePrice.toFixed(2)}
-                            </span>
-                        </p>
-                    </div>
-                </div>
-            ))}
+                            </td>
+
+                            <td className="px-4 py-3">
+                                <div className="flex justify-end gap-3">
+                                    {onEdit && (
+                                        <button
+                                            onClick={() => onEdit(price)}
+                                            className="text-blue-600 hover:text-blue-800 transition"
+                                            title="Editar preço"
+                                        >
+                                            <Pencil size={16} />
+                                        </button>
+                                    )}
+
+                                    {onDelete && (
+                                        <button
+                                            onClick={() => onDelete(price.id)}
+                                            className="text-red-600 hover:text-red-800 transition"
+                                            title="Excluir preço"
+                                        >
+                                            <Trash2 size={16} />
+                                        </button>
+                                    )}
+                                </div>
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
         </div>
     );
 }

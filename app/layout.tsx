@@ -5,6 +5,7 @@ import './globals.css';
 
 import { AuthProvider } from '@/src/contexts/AuthContext';
 import { LayoutWrapper } from '@/src/components/Layout/LayoutWrapper';
+import PageTransition from '@/src/components/ui/PageTransition';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -28,7 +29,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
         <AuthProvider>
           <LayoutWrapper>
-            {children}
+            <PageTransition>
+              {children}
+            </PageTransition>
+
           </LayoutWrapper>
         </AuthProvider>
 

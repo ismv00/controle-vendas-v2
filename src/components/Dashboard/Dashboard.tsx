@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { StatsGrid } from './StatsGrid';
+import { RecentSales } from './RecentSales';
 
 type Period = 'today' | 'month' | 'year' | 'all';
 
@@ -32,6 +33,8 @@ export function Dashboard() {
 
       {/* Estatísticas */}
       <StatsGrid period={period} />
+
+      <RecentSales />
 
 
     </div>

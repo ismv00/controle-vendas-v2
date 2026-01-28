@@ -1,5 +1,5 @@
 import { Client } from '@/src/types/Client';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Pencil } from 'lucide-react';
 
 interface Props {
   clients: Client[];
@@ -9,31 +9,66 @@ interface Props {
 
 export function ClientList({ clients, onEdit, onDelete }: Props) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3  gap-4">
-      {clients.map((client) => (
-        <div key={client.id} className="bg-white border rounded-xl p-4">
-          <h3 className="font-medium">{client.name}</h3>
-          <p className="text-sm text-gray-500">{client.fantasy}</p>
+    <div className="bg-white rounded-xl border overflow-hidden">
+      {clients.length === 0 ? (
+        <p className="p-6 text-sm text-gray-500">
+          Nenhum cliente cadastrado.
+        </p>
+      ) : (
+        <table className="w-full text-sm">
+          <thead className="bg-gray-50 text-gray-500">
+            <tr>
+              <th className="px-4 py-3 text-left">Cliente</th>
+              <th className="px-4 py-3 text-left">Fantasia</th>
+              <th className="px-4 py-3 text-left">Endereço</th>
+              <th className="px-4 py-3 text-left">Telefone</th>
+              <th className="px-4 py-3 text-right">Ações</th>
+            </tr>
+          </thead>
 
-          <p className="text-xs text-gray-400 mt-1">{client.address}</p>
+          <tbody>
+            {clients.map((client) => (
+              <tr key={client.id} className="border-t">
+                <td className="px-4 py-3 font-medium text-gray-900">
+                  {client.name}
+                </td>
 
-          <p className="text-xs text-gray-400">✆ {client.phone}</p>
+                <td className="px-4 py-3 text-gray-500">
+                  {client.fantasy || '-'}
+                </td>
 
-          <button
-            className="text-sm text-blue-600 hover:underline mt-3"
-            onClick={() => onEdit(client)}
-          >
-            Editar
-          </button>
+                <td className="px-4 py-3 text-gray-500">
+                  {client.address || '-'}
+                </td>
 
-          <button
-            className="text-sm text-blue-600 hover:underline mt-3"
-            onClick={() => onDelete(client)}
-          >
-            <Trash2 size={16} />
-          </button>
-        </div>
-      ))}
+                <td className="px-4 py-3 text-gray-500">
+                  {client.phone || '-'}
+                </td>
+
+                <td className="px-4 py-3">
+                  <div className="flex justify-end gap-3">
+                    <button
+                      onClick={() => onEdit(client)}
+                      className="text-blue-600 hover:text-blue-800 transition"
+                      title="Editar cliente"
+                    >
+                      <Pencil size={16} />
+                    </button>
+
+                    <button
+                      onClick={() => onDelete(client)}
+                      className="text-red-600 hover:text-red-800 transition"
+                      title="Excluir cliente"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
     </div>
   );
 }

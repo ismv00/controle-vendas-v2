@@ -27,3 +27,8 @@ Refinamento
 [] Ao criar um novo cliente nao está salvando quando faz a edição
 [] Tabela de preços está retornando os produtos de outro cliente.
 [] opção de logout
+
+
+
+wSkNQJ8eyFh6FL4E1Z51vfopnQc2
+Tgigk2w5fAX8wDUClgwGeeQwUPl1
