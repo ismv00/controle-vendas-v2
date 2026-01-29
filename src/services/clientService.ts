@@ -16,7 +16,7 @@ import { Client } from '../types/Client';
 
 const COLLECTION = 'clients';
 
-export async function createClient(client: Omit<Client, 'id' | 'createdAt'>) {
+export async function createClient(client: Omit<Client, 'id' | 'createdAt'>): Promise<string> {
   const payload = {
     name: client.name.toUpperCase(),
     fantasy: client.fantasy.toUpperCase(),
@@ -27,7 +27,8 @@ export async function createClient(client: Omit<Client, 'id' | 'createdAt'>) {
     createdAt: new Date(),
   };
 
-  await addDoc(collection(db, COLLECTION), payload);
+  const docRef = await addDoc(collection(db, COLLECTION), payload);
+  return docRef.id;
 }
 
 export async function getClientsByUser(userId: string): Promise<Client[]> {
