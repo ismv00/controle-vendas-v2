@@ -7,6 +7,14 @@ interface Props {
   onDelete: (id: string) => void;
 }
 
+function calculateProfit(sale: Sale) {
+  if (!sale.items || sale.items.length === 0) return 0;
+
+  const totalCost = sale.items.reduce((sum, item) => sum + item.baseCost * item.quantity, 0)
+
+  return sale.totalValue - totalCost;
+}
+
 export function SaleList({ sales, onEdit, onDelete }: Props) {
   if (!sales.length) {
     return (
@@ -49,9 +57,18 @@ export function SaleList({ sales, onEdit, onDelete }: Props) {
                 R$ {sale.totalValue.toFixed(2)}
               </td>
 
-              <td className="px-4 py-3 font-semibold text-green-600">
-                R$ {sale.totalProfit.toFixed(2)}
-              </td>
+              {(() => {
+                const profit = calculateProfit(sale);
+
+                return (
+                  <td
+                    className={`px-4 py-3 font-semibold ${profit >= 0 ? 'text-green-600' : 'text-red-600'
+                      }`}
+                  >
+                    R$ {profit.toFixed(2)}
+                  </td>
+                );
+              })()}
 
               <td className="px-4 py-3">
                 <div className="flex justify-end gap-3">

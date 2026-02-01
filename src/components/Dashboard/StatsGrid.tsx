@@ -16,7 +16,7 @@ import { getAllSales } from '@/src/services/saleService';
 import { useAuth } from '@/src/contexts/AuthContext';
 import { StatCard } from './StatCard';
 
-type Period = 'today' | 'month' | 'year' | 'all';
+type Period = 'today' | 'month' | 'lastMonth' | 'year' | 'all';
 
 interface Props {
   period: Period;
@@ -53,11 +53,31 @@ export function StatsGrid({ period }: Props) {
       );
     }
 
+    if (period === 'lastMonth') {
+      const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+
+      return (
+        date.getMonth() === lastMonth.getMonth() &&
+        date.getFullYear() === lastMonth.getFullYear()
+      );
+    }
+
     if (period === 'year') {
       return date.getFullYear() === now.getFullYear();
     }
 
     return true;
+  }
+
+
+  function calculateSaleProfit(sale: any) {
+    if (!sale.items || sale.items.length === 0) return 0;
+
+    const totalCost = sale.items.reduce(
+      (sum: number, item: any) => sum + item.baseCost * item.quantity, 0
+    )
+
+    return sale.totalValue - totalCost
   }
 
   useEffect(() => {
@@ -87,7 +107,7 @@ export function StatsGrid({ period }: Props) {
       );
 
       const totalProfit = filteredSales.reduce(
-        (sum, sale) => sum + sale.totalProfit,
+        (sum, sale) => sum + calculateSaleProfit(sale),
         0
       );
 

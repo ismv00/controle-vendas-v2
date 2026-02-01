@@ -16,6 +16,17 @@ export function PriceList({ prices, onEdit, onDelete }: Props) {
         );
     }
 
+    function getBaseCost(price: ProductPrice): number {
+        return typeof price.baseCost === 'number' ? price.baseCost : 0;
+    }
+
+    function calculateProfit(price: ProductPrice): number {
+        const baseCost = getBaseCost(price);
+        const expense = baseCost * (price.operationalExpensePercent / 100);
+
+        return price.salePrice - baseCost - expense;
+    }
+
     return (
         <div className="bg-white rounded-xl border overflow-hidden">
             <table className="w-full text-sm">
@@ -26,58 +37,71 @@ export function PriceList({ prices, onEdit, onDelete }: Props) {
                         <th className="px-4 py-3 text-left">Despesa</th>
                         <th className="px-4 py-3 text-left">Margem</th>
                         <th className="px-4 py-3 text-left">Preço de Venda</th>
+                        <th className="px-4 py-3 text-left">Lucro</th>
                         <th className="px-4 py-3 text-right">Ações</th>
                     </tr>
                 </thead>
 
                 <tbody>
-                    {prices.map((price) => (
-                        <tr key={price.id} className="border-t">
-                            <td className="px-4 py-3 font-medium text-gray-900">
-                                {price.productName}
-                            </td>
+                    {prices.map((price) => {
+                        const baseCost = getBaseCost(price);
+                        const profit = calculateProfit(price);
 
-                            <td className="px-4 py-3 text-gray-600">
-                                R$ {price.cost.toFixed(2)}
-                            </td>
+                        return (
+                            <tr key={price.id} className="border-t">
+                                <td className="px-4 py-3 font-medium text-gray-900">
+                                    {price.productName}
+                                </td>
 
-                            <td className="px-4 py-3 text-gray-600">
-                                {price.operationalExpensePercent}%
-                            </td>
+                                <td className="px-4 py-3 text-gray-600">
+                                    R$ {baseCost.toFixed(2)}
+                                </td>
 
-                            <td className="px-4 py-3 text-gray-600">
-                                {price.marginPercent}%
-                            </td>
+                                <td className="px-4 py-3 text-gray-600">
+                                    {price.operationalExpensePercent}%
+                                </td>
 
-                            <td className="px-4 py-3 font-semibold text-green-600">
-                                R$ {price.salePrice.toFixed(2)}
-                            </td>
+                                <td className="px-4 py-3 text-gray-600">
+                                    {price.marginPercent}%
+                                </td>
 
-                            <td className="px-4 py-3">
-                                <div className="flex justify-end gap-3">
-                                    {onEdit && (
-                                        <button
-                                            onClick={() => onEdit(price)}
-                                            className="text-blue-600 hover:text-blue-800 transition"
-                                            title="Editar preço"
-                                        >
-                                            <Pencil size={16} />
-                                        </button>
-                                    )}
+                                <td className="px-4 py-3 font-semibold text-green-600">
+                                    R$ {price.salePrice.toFixed(2)}
+                                </td>
 
-                                    {onDelete && (
-                                        <button
-                                            onClick={() => onDelete(price.id)}
-                                            className="text-red-600 hover:text-red-800 transition"
-                                            title="Excluir preço"
-                                        >
-                                            <Trash2 size={16} />
-                                        </button>
-                                    )}
-                                </div>
-                            </td>
-                        </tr>
-                    ))}
+                                <td
+                                    className={`px-4 py-3 font-semibold ${profit >= 0 ? 'text-blue-600' : 'text-red-600'
+                                        }`}
+                                >
+                                    R$ {profit.toFixed(2)}
+                                </td>
+
+                                <td className="px-4 py-3">
+                                    <div className="flex justify-end gap-3">
+                                        {onEdit && (
+                                            <button
+                                                onClick={() => onEdit(price)}
+                                                className="text-blue-600 hover:text-blue-800 transition"
+                                                title="Editar preço"
+                                            >
+                                                <Pencil size={16} />
+                                            </button>
+                                        )}
+
+                                        {onDelete && (
+                                            <button
+                                                onClick={() => onDelete(price.id)}
+                                                className="text-red-600 hover:text-red-800 transition"
+                                                title="Excluir preço"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        )}
+                                    </div>
+                                </td>
+                            </tr>
+                        );
+                    })}
                 </tbody>
             </table>
         </div>

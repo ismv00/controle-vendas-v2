@@ -1,18 +1,18 @@
 export interface ProductPrice {
-    id: string;
+  id: string;
 
-    userId: string;
+  userId: string;
 
-    productId: string;
-    productName: string;
+  productId: string;
+  productName: string;
 
-    cost: number;
+  baseCost: number;
 
-    operationalExpensePercent: number;
-    marginPercent: number;
+  operationalExpensePercent: number;
+  marginPercent: number;
 
-    salePrice: number;
+  salePrice: number;
 
-    createdAt: Date;
-    updatedAt?: Date;
+  createdAt: Date;
+  updatedAt?: Date;
 }

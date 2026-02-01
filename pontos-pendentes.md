@@ -24,11 +24,11 @@ Dashboard
 
 Refinamento
 [x]lucro ao dar desconto na venda
-[] Ao criar um novo cliente nao está salvando quando faz a edição
-[] Tabela de preços está retornando os produtos de outro cliente.
-[] opção de logout
+[x] Ao criar um novo cliente nao está salvando quando faz a edição
+[x] Tabela de preços está retornando os produtos de outro cliente.
+[x] opção de logout
 
-
-
-wSkNQJ8eyFh6FL4E1Z51vfopnQc2
-Tgigk2w5fAX8wDUClgwGeeQwUPl1
+venda
+aline
+total 70,00
+lucro 41.86
