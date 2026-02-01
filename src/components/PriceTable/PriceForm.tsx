@@ -24,7 +24,7 @@ export function PriceForm({ products, initialData, onSubmit }: Props) {
   // DERIVAR CUSTO: se estiver editando, usa initialData.cost; senão, usa o custo do produto selecionado
   const cost = useMemo(() => {
     if (initialData) {
-      return initialData.cost;
+      return initialData.baseCost;
     }
     if (productId) {
       const product = products.find((p) => p.id === productId);
@@ -33,11 +33,19 @@ export function PriceForm({ products, initialData, onSubmit }: Props) {
     return 0;
   }, [initialData, productId, products]);
 
-  // CÁLCULO
+  /* =====================
+    CUSTO REAL (CUSTO + DESPESA)
+    ===================== */
+  const baseCost = useMemo(() => {
+    return cost + cost * (operationalExpensePercent / 100);
+  }, [cost, operationalExpensePercent]);
+
+  /* =====================
+   PREÇO DE VENDA
+   ===================== */
   const salePrice = useMemo(() => {
-    const base = cost + cost * (operationalExpensePercent / 100);
-    return base + base * (marginPercent / 100);
-  }, [cost, operationalExpensePercent, marginPercent]);
+    return baseCost + baseCost * (marginPercent / 100)
+  }, [baseCost, marginPercent])
 
   //SUBMIT
   function handleSubmit(e: React.FormEvent) {
@@ -54,7 +62,7 @@ export function PriceForm({ products, initialData, onSubmit }: Props) {
     onSubmit({
       productId,
       productName: product.name,
-      cost,
+      baseCost,
       operationalExpensePercent,
       marginPercent,
       salePrice,
@@ -129,9 +137,20 @@ export function PriceForm({ products, initialData, onSubmit }: Props) {
       </div>
 
       {/* RESULTADO */}
-      <div className="bg-gray-50 rounded-lg p-4 border text-sm">
-        <p className="text-gray-600">Preço de venda</p>
-        <p className="text-lg font-semibold text-green-600">R$ {salePrice.toFixed(2)}</p>
+      <div className="bg-gray-50 rounded-lg p-4 border text-sm space-y-1">
+        <p className="text-gray-600">
+          Custo real (custo + despesa)
+        </p>
+        <p className="font-medium">
+          R$ {baseCost.toFixed(2)}
+        </p>
+
+        <p className="text-gray-600 mt-2">
+          Preço de venda
+        </p>
+        <p className="text-lg font-semibold text-green-600">
+          R$ {salePrice.toFixed(2)}
+        </p>
       </div>
 
       {/* FOOTER */}

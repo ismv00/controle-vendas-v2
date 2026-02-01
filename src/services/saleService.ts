@@ -15,7 +15,7 @@ import { Sale } from '../types/Sale';
 
 const COLLECTION = 'sales';
 
-// Criar a venda
+// CREATE
 export async function createSale(sale: Omit<Sale, 'id' | 'createdAt'>) {
   const payload = {
     ...sale,
@@ -25,7 +25,7 @@ export async function createSale(sale: Omit<Sale, 'id' | 'createdAt'>) {
   await addDoc(collection(db, COLLECTION), payload);
 }
 
-// buscar as vendas do usuárip
+// GET BY USER
 export async function getSalesByUser(userId: string): Promise<Sale[]> {
   const q = query(
     collection(db, COLLECTION),
@@ -38,6 +38,30 @@ export async function getSalesByUser(userId: string): Promise<Sale[]> {
   return snapshot.docs.map((docSnap) => {
     const data = docSnap.data();
 
+    const items = (data.items ?? []).map((item: any) => {
+      const baseCost =
+        typeof item.baseCost === 'number'
+          ? item.baseCost
+          : typeof item.cost === 'number'
+          ? item.cost
+          : 0;
+
+      return {
+        ...item,
+        baseCost,
+      };
+    });
+
+    const totalCost =
+      typeof data.totalCost === 'number'
+        ? data.totalCost
+        : items.reduce((sum: number, item: any) => sum + item.baseCost * (item.quantity ?? 1), 0);
+
+    const totalValue = typeof data.totalValue === 'number' ? data.totalValue : 0;
+
+    const totalProfit =
+      typeof data.totalProfit === 'number' ? data.totalProfit : totalValue - totalCost;
+
     return {
       id: docSnap.id,
       userId: data.userId,
@@ -45,19 +69,19 @@ export async function getSalesByUser(userId: string): Promise<Sale[]> {
       clientId: data.clientId,
       clientName: data.clientName,
 
-      items: data.items ?? [],
+      items,
 
-      totalItems: data.totalItems ?? 0,
-      totalValue: data.totalValue ?? 0,
-      totalCost: data.totalCost ?? 0,
-      totalProfit: data.totalProfit ?? 0,
+      totalItems: data.totalItems ?? items.length,
+      totalValue,
+      totalCost,
+      totalProfit,
 
       createdAt: data.createdAt?.toDate?.() ?? new Date(),
     };
   });
 }
 
-//Atualizar venda
+// UPDATE
 export async function updateSale(id: string, data: Partial<Sale>) {
   await updateDoc(doc(db, COLLECTION, id), {
     ...data,
@@ -65,11 +89,12 @@ export async function updateSale(id: string, data: Partial<Sale>) {
   });
 }
 
-//Excluir Venda
+// DELETE
 export async function deleteSale(id: string) {
   await deleteDoc(doc(db, COLLECTION, id));
 }
 
+// GET ALL
 export async function getAllSales(userId: string): Promise<Sale[]> {
   return getSalesByUser(userId);
 }

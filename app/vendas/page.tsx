@@ -89,7 +89,7 @@ export default function SalesPage() {
     totalProfit: number;
   }) {
     // Calculate totalCost from items
-    const totalCost = data.items.reduce((sum, item) => sum + item.cost * item.quantity, 0);
+    const totalCost = data.items.reduce((sum, item) => sum + item.baseCost * item.quantity, 0);
 
     if (editingSale) {
       await updateSale(editingSale.id, {

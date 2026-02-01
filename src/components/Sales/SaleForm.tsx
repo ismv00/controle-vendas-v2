@@ -3,21 +3,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Client } from '@/src/types/Client';
 import { Product } from '@/src/types/Product';
-import { Sale } from '@/src/types/Sale';
+import { Sale, SaleItem } from '@/src/types/Sale';
 import { ProductPrice } from '@/src/types/ProductPrice';
-
-interface SaleItem {
-  productId: string;
-  productName: string;
-
-  cost: number;
-  basePrice: number;
-  price: number;
-  discountPercent: number;
-  quantity: number;
-  subtotal: number;
-  profit: number;
-}
 
 interface Props {
   clients: Client[];
@@ -30,7 +17,7 @@ interface Props {
     totalItems: number;
     totalValue: number;
     totalProfit: number;
-  }) => void;
+  }) => void | Promise<void>;
   initialData?: Sale | null;
 }
 
@@ -55,19 +42,21 @@ export function SaleForm({ clients, products, prices, onSubmit, initialData }: P
     }
 
     const basePrice = Number(productPrice.salePrice.toFixed(2));
+    const baseCost = Number(productPrice.baseCost.toFixed(2));
 
+    const profit = Number((basePrice - baseCost).toFixed(2));
     setItems((prev) => [
       ...prev,
       {
         productId: product.id,
         productName: product.name,
-        cost: product.cost,
+        baseCost,
         basePrice,
         price: basePrice,
         discountPercent: 0,
         quantity: 1,
         subtotal: basePrice,
-        profit: 0,
+        profit,
       },
     ]);
   }
@@ -80,19 +69,17 @@ export function SaleForm({ clients, products, prices, onSubmit, initialData }: P
       prev.map((item, i) => {
         if (i !== index) return item;
 
-        const price =
-          item.basePrice * (1 + percent / 100);
-
+        const price = item.basePrice * (1 + percent / 100);
         const finalPrice = Number(price.toFixed(2));
 
+        const subtotal = Number((finalPrice * item.quantity).toFixed(2));
+        const profit = Number((subtotal - item.baseCost * item.quantity).toFixed(2));
         return {
           ...item,
           discountPercent: percent,
           price: finalPrice,
-          subtotal: Number((finalPrice * item.quantity).toFixed(2)),
-          profit: Number(
-            ((finalPrice - item.cost) * item.quantity).toFixed(2)
-          ),
+          subtotal,
+          profit,
         };
       })
     );
@@ -111,14 +98,14 @@ export function SaleForm({ clients, products, prices, onSubmit, initialData }: P
 
         const finalPrice = Number(price.toFixed(2));
 
+        const subtotal = Number((finalPrice * item.quantity).toFixed(2));
+        const profit = Number((subtotal - item.baseCost * item.quantity).toFixed(2));
         return {
           ...item,
           price: finalPrice,
           discountPercent: Number(percent.toFixed(2)),
-          subtotal: Number((finalPrice * item.quantity).toFixed(2)),
-          profit: Number(
-            ((finalPrice - item.basePrice) * item.quantity).toFixed(2)
-          ),
+          subtotal,
+          profit,
         };
       })
     );
@@ -131,14 +118,11 @@ export function SaleForm({ clients, products, prices, onSubmit, initialData }: P
     setItems((prev) =>
       prev.map((item, i) =>
         i === index
-          ? {
-            ...item,
-            quantity,
-            subtotal: Number((item.price * quantity).toFixed(2)),
-            profit: Number(
-              ((item.price - item.basePrice) * quantity).toFixed(2)
-            ),
-          }
+          ? (() => {
+            const subtotal = Number((item.price * quantity).toFixed(2));
+            const profit = Number((subtotal - item.baseCost * quantity).toFixed(2));
+            return { ...item, quantity, subtotal, profit };
+          })()
           : item
       )
     );
@@ -154,9 +138,10 @@ export function SaleForm({ clients, products, prices, onSubmit, initialData }: P
   const totals = useMemo(() => {
     const totalItems = items.reduce((sum, i) => sum + i.quantity, 0);
     const totalValue = items.reduce((sum, i) => sum + i.subtotal, 0);
-    const totalProfit = items.reduce((sum, i) => sum + i.profit, 0);
+    const totalCost = items.reduce((sum, i) => sum + i.baseCost * i.quantity, 0);
+    const totalProfit = totalValue - totalCost
 
-    return { totalItems, totalValue, totalProfit };
+    return { totalItems, totalValue, totalCost, totalProfit };
   }, [items]);
 
   /* =====================
@@ -184,7 +169,7 @@ export function SaleForm({ clients, products, prices, onSubmit, initialData }: P
   useEffect(() => {
     if (initialData) {
       setClientId(initialData.clientId);
-      setItems(initialData.items as SaleItem[]);
+      setItems(initialData.items);
     } else {
       setClientId('');
       setItems([]);
