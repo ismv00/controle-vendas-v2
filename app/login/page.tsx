@@ -15,7 +15,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  async function handleLogin(e:React.FormEvent) {
+  async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
     setError("");
@@ -43,7 +43,7 @@ export default function LoginPage() {
         </div>
 
 
-      {/**CARD */}
+        {/**CARD */}
         <div className="bg-white rounded-xl shadow-sm p-8 space-y-6
         ">
           <div className="text-center">
@@ -63,7 +63,7 @@ export default function LoginPage() {
               />
             </div>
 
-             <div className="relative">
+            <div className="relative">
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
               <input type={showPassword ? 'text' : 'password'}
                 placeholder="Senha"
@@ -108,7 +108,7 @@ export default function LoginPage() {
         </div>
 
         <p className="text-xs text-gray-400 text-center">Ao continuar, você concorda com nossos{' '}
-          <span className="underline cursor-pointer">Termos de Uso</span>{ ' '}
+          <span className="underline cursor-pointer">Termos de Uso</span>{' '}
           e{' '}
           <span className="underline cursor-pointer">Política de Privacidade</span>
         </p>
