@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
+import { Plus_Jakarta_Sans, IBM_Plex_Mono } from 'next/font/google';
 import './globals.css';
 
 
@@ -7,14 +7,16 @@ import { AuthProvider } from '@/src/contexts/AuthContext';
 import { LayoutWrapper } from '@/src/components/Layout/LayoutWrapper';
 import PageTransition from '@/src/components/ui/PageTransition';
 
-const geistSans = Geist({
-  variable: '--font-geist-sans',
+const plusJakarta = Plus_Jakarta_Sans({
+  variable: '--font-plus-jakarta',
   subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
 });
 
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
+const ibmPlexMono = IBM_Plex_Mono({
+  variable: '--font-ibm-plex-mono',
   subsets: ['latin'],
+  weight: ['400', '500', '600'],
 });
 
 export const metadata: Metadata = {
@@ -25,7 +27,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="pt-BR">
-      <body className={`antialiased font-sans bg-gray-50  ${geistSans.variable} ${geistMono.variable}`}>
+      <body className={`antialiased font-sans bg-appbg text-ink ${plusJakarta.variable} ${ibmPlexMono.variable}`}>
 
         <AuthProvider>
           <LayoutWrapper>

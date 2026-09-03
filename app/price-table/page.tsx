@@ -104,26 +104,37 @@ export default function PriceTablePage() {
     setOpen(true);
   }
 
+  const negativeCount = prices.filter((p) => {
+    const expense = p.baseCost * (p.operationalExpensePercent / 100);
+    return p.salePrice - p.baseCost - expense < 0;
+  }).length;
+
   return (
-    <>
+    <div className="animate-vf-in space-y-5">
       {/* HEADER */}
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-xl font-semibold">Tabela de Preços</h1>
+      <div className="mb-1 flex items-center justify-between">
+        <div>
+          <h1 className="text-[25px] font-bold tracking-[-.025em] text-ink">Tabela de Preços</h1>
+          <p className="mt-1 text-[13.5px] text-ink-3">
+            Custo, despesa e margem por produto
+            {negativeCount > 0 ? ` · ${negativeCount} itens com lucro negativo` : ''}
+          </p>
+        </div>
 
         <button
-          className="btn-primary"
+          className="rounded-input bg-accent px-4 py-[9px] text-[13px] font-semibold text-white shadow-btn transition hover:opacity-90"
           onClick={() => {
             setEditingPrice(null);
             setOpen(true);
           }}
         >
-          Novo Preço
+          + Novo preço
         </button>
       </div>
 
       {/* LISTA */}
       {loading ? (
-        <p className="text-sm text-gray-500">Carregando preços...</p>
+        <p className="text-[13px] text-mute">Carregando preços...</p>
       ) : (
         <PriceList prices={prices} onEdit={handleEditPrice} onDelete={handleDeletePrice} />
       )}
@@ -131,14 +142,24 @@ export default function PriceTablePage() {
       {/* MODAL */}
       <Modal
         open={open}
-        title={editingPrice ? 'Editar Preço' : 'Novo Preço'}
+        title={editingPrice ? 'Editar preço' : 'Novo preço'}
+        subtitle="Informe custo e margem — o preço de venda é sugerido."
+        maxWidth={560}
         onClose={() => {
           setOpen(false);
           setEditingPrice(null);
         }}
       >
-        <PriceForm products={products} onSubmit={handleCreatePrice} initialData={editingPrice} />
+        <PriceForm
+          products={products}
+          onSubmit={handleCreatePrice}
+          onCancel={() => {
+            setOpen(false);
+            setEditingPrice(null);
+          }}
+          initialData={editingPrice}
+        />
       </Modal>
-    </>
+    </div>
   );
 }

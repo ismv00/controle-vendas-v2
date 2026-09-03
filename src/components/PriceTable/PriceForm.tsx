@@ -4,50 +4,41 @@ import React, { useMemo, useState } from 'react';
 import { Product } from '@/src/types/Product';
 import { ProductPrice } from '@/src/types/ProductPrice';
 import { ProductPriceFormData } from '@/src/types/ProductPriceForm';
+import { formatBRL } from '@/src/lib/format';
 
 interface Props {
   products: Product[];
   initialData?: ProductPrice | null;
   onSubmit: (data: ProductPriceFormData) => void;
+  onCancel: () => void;
 }
 
-export function PriceForm({ products, initialData, onSubmit }: Props) {
+const inputClass =
+  'w-full rounded-input border border-border-input bg-surface-subtle-2 px-3 py-2.5 text-[13px] text-ink placeholder:text-placeholder focus:outline-none focus:border-accent disabled:bg-fill-input disabled:text-ink-3';
+const labelClass = 'mb-1.5 block text-[12px] font-semibold text-ink-2';
+
+export function PriceForm({ products, initialData, onSubmit, onCancel }: Props) {
   const [productId, setProductId] = useState(() => initialData?.productId ?? '');
   const [operationalExpensePercent, setOperationalExpensePercent] = useState(
     () => initialData?.operationalExpensePercent ?? 0
   );
   const [marginPercent, setMarginPercent] = useState(() => initialData?.marginPercent ?? 0);
 
-  // Reset form when initialData changes (switching between create/edit modes)
   const formKey = initialData?.id ?? 'new';
 
-  // DERIVAR CUSTO: se estiver editando, usa initialData.cost; senão, usa o custo do produto selecionado
   const cost = useMemo(() => {
-    if (initialData) {
-      return initialData.baseCost;
-    }
-    if (productId) {
-      const product = products.find((p) => p.id === productId);
-      return product?.cost ?? 0;
-    }
+    if (initialData) return initialData.baseCost;
+    if (productId) return products.find((p) => p.id === productId)?.cost ?? 0;
     return 0;
   }, [initialData, productId, products]);
 
-  /* =====================
-    CUSTO REAL (CUSTO + DESPESA)
-    ===================== */
-  const baseCost = useMemo(() => {
-    return cost + cost * (operationalExpensePercent / 100);
-  }, [cost, operationalExpensePercent]);
+  const baseCost = useMemo(
+    () => cost + cost * (operationalExpensePercent / 100),
+    [cost, operationalExpensePercent]
+  );
 
-  /* =====================
-   PREÇO DE VENDA
-   ===================== */
-  const salePrice = useMemo(() => {
-    return baseCost + baseCost * (marginPercent / 100)
-  }, [baseCost, marginPercent])
+  const salePrice = useMemo(() => baseCost + baseCost * (marginPercent / 100), [baseCost, marginPercent]);
 
-  //SUBMIT
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
@@ -70,93 +61,79 @@ export function PriceForm({ products, initialData, onSubmit }: Props) {
   }
 
   return (
-    <form key={formKey} onSubmit={handleSubmit} className="space-y-6">
-      {/* PRODUTO */}
-      <div>
-        <label className="block text-xs font-medium text-gray-600 mb-1">Produto</label>
+    <form key={formKey} onSubmit={handleSubmit}>
+      <div className="space-y-4">
+        <div>
+          <label className={labelClass}>Produto</label>
+          <select
+            className={inputClass}
+            value={productId}
+            onChange={(e) => setProductId(e.target.value)}
+            required
+            disabled={!!initialData}
+          >
+            <option value="">Selecione um produto</option>
+            {products.map((product) => (
+              <option key={product.id} value={product.id}>
+                {product.name}
+              </option>
+            ))}
+          </select>
+        </div>
 
-        <select
-          className="w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm
-                       focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          value={productId}
-          onChange={(e) => setProductId(e.target.value)}
-          required
-          disabled={!!initialData}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div>
+            <label className={labelClass}>Preço de custo</label>
+            <input type="number" className={inputClass} value={cost} disabled />
+          </div>
+
+          <div>
+            <label className={labelClass}>Despesa (%)</label>
+            <input
+              type="number"
+              step="0.01"
+              className={inputClass}
+              value={operationalExpensePercent}
+              onChange={(e) => setOperationalExpensePercent(Number(e.target.value))}
+            />
+          </div>
+
+          <div>
+            <label className={labelClass}>Margem (%)</label>
+            <input
+              type="number"
+              step="0.01"
+              className={inputClass}
+              value={marginPercent}
+              onChange={(e) => setMarginPercent(Number(e.target.value))}
+            />
+          </div>
+        </div>
+
+        <div className="rounded-block border border-[#e0eae4] bg-[#f3f6f4] px-4 py-3">
+          <p className="text-[12px] text-ink-2">Custo real (custo + despesa)</p>
+          <p className="mt-0.5 font-mono text-[13px] font-medium text-ink">{formatBRL(baseCost)}</p>
+
+          <p className="mt-2 text-[12px] text-ink-2">Preço de venda</p>
+          <p className="mt-0.5 font-mono text-[18px] font-semibold text-[#14663f]">
+            {formatBRL(salePrice)}
+          </p>
+        </div>
+      </div>
+
+      <div className="-mx-6 -mb-5 mt-6 flex justify-end gap-2 rounded-b-modal border-t border-border-divider-2 bg-surface-subtle-2 px-6 py-4">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="rounded-input border border-[#dcd8d0] bg-white px-4 py-2 text-[13px] font-semibold text-ink transition hover:border-ink-4"
         >
-          <option value="">Selecione um produto</option>
-          {products.map((product) => (
-            <option key={product.id} value={product.id}>
-              {product.name}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {/* GRID DE VALORES */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* CUSTO */}
-        <div>
-          <label className="block text-xs font-medium text-gray-600 mb-1">Preço de custo</label>
-          <input
-            type="number"
-            className="w-full rounded-lg border border-gray-300 bg-gray-100 px-3 py-2 text-sm"
-            value={cost}
-            disabled
-          />
-        </div>
-
-        {/* DESPESA */}
-        <div>
-          <label className="block text-xs font-medium text-gray-600 mb-1">
-            Despesa Operacional (%)
-          </label>
-          <input
-            type="number"
-            step="0.01"
-            className="w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm
-                           focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            value={operationalExpensePercent}
-            onChange={(e) => setOperationalExpensePercent(Number(e.target.value))}
-          />
-        </div>
-
-        {/* MARGEM */}
-        <div>
-          <label className="block text-xs font-medium text-gray-600 mb-1">
-            Margem de venda (%)
-          </label>
-          <input
-            type="number"
-            step="0.01"
-            className="w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm
-                           focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            value={marginPercent}
-            onChange={(e) => setMarginPercent(Number(e.target.value))}
-          />
-        </div>
-      </div>
-
-      {/* RESULTADO */}
-      <div className="bg-gray-50 rounded-lg p-4 border text-sm space-y-1">
-        <p className="text-gray-600">
-          Custo real (custo + despesa)
-        </p>
-        <p className="font-medium">
-          R$ {baseCost.toFixed(2)}
-        </p>
-
-        <p className="text-gray-600 mt-2">
-          Preço de venda
-        </p>
-        <p className="text-lg font-semibold text-green-600">
-          R$ {salePrice.toFixed(2)}
-        </p>
-      </div>
-
-      {/* FOOTER */}
-      <div className="flex justify-end pt-4 border-t">
-        <button type="submit" className="btn-primary px-6">
-          {initialData ? 'Salvar alterações' : 'Salvar Preço'}
+          Cancelar
+        </button>
+        <button
+          type="submit"
+          className="rounded-input bg-accent px-5 py-2 text-[13px] font-semibold text-white shadow-btn transition hover:opacity-90"
+        >
+          {initialData ? 'Salvar alterações' : 'Salvar preço'}
         </button>
       </div>
     </form>

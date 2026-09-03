@@ -24,5 +24,7 @@ export interface Sale {
   totalCost: number;
   totalProfit: number;
 
+  status?: 'paid' | 'pending';
+
   createdAt: Date;
 }

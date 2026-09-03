@@ -5,10 +5,15 @@ import { Client } from '@/src/types/Client';
 
 interface Props {
   onSubmit: (data: { name: string; fantasy: string; address: string; phone: string }) => void;
+  onCancel: () => void;
   initialData?: Client | null;
 }
 
-export function ClientForm({ onSubmit, initialData }: Props) {
+const inputClass =
+  'w-full rounded-input border border-border-input bg-surface-subtle-2 px-3 py-2.5 text-[13px] text-ink placeholder:text-placeholder focus:outline-none focus:border-accent';
+const labelClass = 'mb-1.5 block text-[12px] font-semibold text-ink-2';
+
+export function ClientForm({ onSubmit, onCancel, initialData }: Props) {
   const [name, setName] = useState('');
   const [fantasy, setFantasy] = useState('');
   const [address, setAddress] = useState('');
@@ -31,8 +36,8 @@ export function ClientForm({ onSubmit, initialData }: Props) {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
-    if (!name || !fantasy || !address || !phone) {
-      alert('Preencha todos os campos.');
+    if (!name.trim()) {
+      alert('Informe o nome do cliente.');
       return;
     }
 
@@ -44,16 +49,14 @@ export function ClientForm({ onSubmit, initialData }: Props) {
     });
   }
 
-   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Campos */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+  return (
+    <form onSubmit={handleSubmit}>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div>
-          <label className="block text-xs font-medium text-gray-600 mb-1">Nome</label>
+          <label className={labelClass}>Nome</label>
           <input
             type="text"
-            className="w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm
-                     focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className={inputClass}
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
@@ -61,46 +64,49 @@ export function ClientForm({ onSubmit, initialData }: Props) {
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-gray-600 mb-1">Fantasia</label>
+          <label className={labelClass}>Fantasia</label>
           <input
             type="text"
-            className="w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm
-                     focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className={inputClass}
             value={fantasy}
             onChange={(e) => setFantasy(e.target.value)}
-            required
+          />
+        </div>
+
+        <div className="md:col-span-2">
+          <label className={labelClass}>Endereço</label>
+          <input
+            type="text"
+            className={inputClass}
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
+          />
+        </div>
+
+        <div>
+          <label className={labelClass}>Telefone</label>
+          <input
+            type="text"
+            className={inputClass}
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
           />
         </div>
       </div>
 
-      <div>
-        <label className="block text-xs font-medium text-gray-600 mb-1">Endereço</label>
-        <input
-          type="text"
-          className="w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm
-                   focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          value={address}
-          onChange={(e) => setAddress(e.target.value)}
-          required
-        />
-      </div>
-
-      <div>
-        <label className="block text-xs font-medium text-gray-600 mb-1">Telefone</label>
-        <input
-          type="text"
-          className="w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm
-                   focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-          required
-        />
-      </div>
-
-      {/* Footer */}
-      <div className="flex justify-end pt-4 border-t">
-        <button type="submit" className="btn-primary px-6">
-          {initialData ? 'Salvar alterações' : 'Cadastrar Cliente'}
+      <div className="-mx-6 -mb-5 mt-6 flex justify-end gap-2 rounded-b-modal border-t border-border-divider-2 bg-surface-subtle-2 px-6 py-4">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="rounded-input border border-[#dcd8d0] bg-white px-4 py-2 text-[13px] font-semibold text-ink transition hover:border-ink-4"
+        >
+          Cancelar
+        </button>
+        <button
+          type="submit"
+          className="rounded-input bg-accent px-5 py-2 text-[13px] font-semibold text-white shadow-btn transition hover:opacity-90"
+        >
+          {initialData ? 'Salvar alterações' : 'Cadastrar cliente'}
         </button>
       </div>
     </form>

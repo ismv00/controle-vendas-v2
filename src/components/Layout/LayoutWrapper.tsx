@@ -1,8 +1,8 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import { Header } from './Header';
-import { NavMenu } from './NavMenu';
+import { Sidebar } from './Sidebar';
+import { Topbar } from './Topbar';
 
 interface Props {
   children: React.ReactNode;
@@ -14,27 +14,19 @@ export function LayoutWrapper({ children }: Props) {
 
   const isAuthPage = authPages.includes(pathname);
 
+  if (isAuthPage) {
+    return <main className="min-h-screen bg-appbg">{children}</main>;
+  }
+
   return (
-    <>
-      {!isAuthPage && (
-        <>
-          <header className="bg-white border-b border-gray-100">
-            <div className="max-w-7xl mx-auto px-6 py-6">
-              <Header />
-            </div>
-          </header>
+    <div className="flex min-h-screen bg-appbg">
+      <Sidebar />
 
-          <nav className="bg-white border-b border-gray-100">
-            <div className="max-w-7xl mx-auto px-6 py-4 justify-center ">
-              <NavMenu />
-            </div>
-          </nav>
-        </>
-      )}
+      <div className="flex min-w-0 flex-1 flex-col">
+        <Topbar />
 
-      <main className="bg-gray-50 min-h-screen mt-8">
-        <div className="max-w-7xl mx-auto px-6">{children}</div>
-      </main>
-    </>
+        <main className="mx-auto w-full max-w-[1280px] flex-1 px-8 pb-12 pt-7">{children}</main>
+      </div>
+    </div>
   );
 }

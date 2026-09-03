@@ -1,7 +1,7 @@
 'use client';
 
 import { useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Modal } from '@/src/components/ui/Modal';
 import { ClientForm } from '@/src/components/Clients/ClientForm';
 import { ClientList } from '@/src/components/Clients/ClientList';
@@ -11,6 +11,8 @@ import {
     updateClient,
     deleteClient,
 } from '@/src/services/clientService';
+import { getSalesByUser } from '@/src/services/saleService';
+import { isInPeriod } from '@/src/lib/period';
 import { Client } from '@/src/types/Client';
 import { useAuth } from '@/src/contexts/AuthContext';
 
@@ -18,6 +20,7 @@ export default function ClientsPageClient() {
     const { user, loading: authLoading } = useAuth();
 
     const [clients, setClients] = useState<Client[]>([]);
+    const [buyersThisMonth, setBuyersThisMonth] = useState(0);
     const [loading, setLoading] = useState(false);
     const [editingClient, setEditingClient] = useState<Client | null>(null);
 
@@ -81,41 +84,61 @@ export default function ClientsPageClient() {
 
         let active = true;
 
-        async function fetchClients() {
+        async function fetchData() {
             setLoading(true);
-            const data = await getClientsByUser(user!.uid);
+
+            const [clientsData, salesData] = await Promise.all([
+                getClientsByUser(user!.uid),
+                getSalesByUser(user!.uid),
+            ]);
 
             if (active) {
-                setClients(data);
+                setClients(clientsData);
+
+                const buyers = new Set(
+                    salesData
+                        .filter((sale) => isInPeriod(sale.createdAt, 'month'))
+                        .map((sale) => sale.clientId)
+                );
+                setBuyersThisMonth(buyers.size);
+
                 setLoading(false);
             }
         }
 
-        fetchClients();
+        fetchData();
 
         return () => {
             active = false;
         };
     }, [user, authLoading]);
 
+    const subtitle = useMemo(
+        () => `${clients.length} cadastrados · ${buyersThisMonth} compraram este mês`,
+        [clients.length, buyersThisMonth]
+    );
+
     return (
-        <>
-            <div className="flex items-center justify-between mb-6">
-                <h1 className="text-xl font-semibold">Clientes</h1>
+        <div className="animate-vf-in space-y-5">
+            <div className="mb-1 flex items-center justify-between">
+                <div>
+                    <h1 className="text-[25px] font-bold tracking-[-.025em] text-ink">Clientes</h1>
+                    <p className="mt-1 text-[13.5px] text-ink-3">{subtitle}</p>
+                </div>
 
                 <button
-                    className="btn-primary"
+                    className="rounded-input bg-accent px-4 py-[9px] text-[13px] font-semibold text-white shadow-btn transition hover:opacity-90"
                     onClick={() => {
                         setEditingClient(null);
                         setOpen(true);
                     }}
                 >
-                    Novo Cliente
+                    + Novo cliente
                 </button>
             </div>
 
             {loading ? (
-                <p className="text-sm text-gray-500">Carregando clientes...</p>
+                <p className="text-[13px] text-mute">Carregando clientes...</p>
             ) : (
                 <ClientList
                     clients={clients}
@@ -129,7 +152,9 @@ export default function ClientsPageClient() {
 
             <Modal
                 open={open}
-                title={editingClient ? 'Editar Cliente' : 'Novo Cliente'}
+                title={editingClient ? 'Editar cliente' : 'Novo cliente'}
+                subtitle="Só o nome é obrigatório — o resto pode vir depois."
+                maxWidth={520}
                 onClose={() => {
                     setOpen(false);
                     setEditingClient(null);
@@ -137,9 +162,13 @@ export default function ClientsPageClient() {
             >
                 <ClientForm
                     onSubmit={handleAddOrEditClient}
+                    onCancel={() => {
+                        setOpen(false);
+                        setEditingClient(null);
+                    }}
                     initialData={editingClient}
                 />
             </Modal>
-        </>
+        </div>
     );
 }

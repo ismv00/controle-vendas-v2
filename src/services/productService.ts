@@ -15,8 +15,9 @@ import { Product } from '@/src/types/Product';
 
 const COLLECTION = 'products';
 
-export async function createProduct(product: Omit<Product, 'id'>) {
-  await addDoc(collection(db, COLLECTION), product);
+export async function createProduct(product: Omit<Product, 'id'>): Promise<string> {
+  const docRef = await addDoc(collection(db, COLLECTION), product);
+  return docRef.id;
 }
 
 export async function getProductsByUser(userId: string): Promise<Product[]> {

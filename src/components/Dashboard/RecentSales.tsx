@@ -1,164 +1,56 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useAuth } from '@/src/contexts/AuthContext';
-import { getSalesByUser } from '@/src/services/saleService';
+import Link from 'next/link';
 import { Sale } from '@/src/types/Sale';
-
-type Period = 'today' | 'month' | 'lastMonth' | 'year' | 'all';
+import { Avatar } from '@/src/components/ui/Avatar';
 
 interface Props {
-    period: Period;
+  sales: Sale[];
 }
 
-export function RecentSales({ period }: Props) {
-    const { user } = useAuth();
-    const [sales, setSales] = useState<Sale[]>([]);
-    const [loading, setLoading] = useState(true);
+export function RecentSales({ sales }: Props) {
+  return (
+    <div className="rounded-card border border-border-divider bg-surface">
+      <div className="flex items-center justify-between border-b border-border-divider-2 px-5 py-4">
+        <h2 className="text-[14px] font-semibold text-ink">Vendas recentes</h2>
+        <Link href="/vendas" className="text-[12.5px] font-semibold text-accent hover:underline">
+          Ver todas
+        </Link>
+      </div>
 
-    function isSaleInPeriod(date: Date, period: Period) {
-        const now = new Date();
+      {sales.length === 0 ? (
+        <p className="px-5 py-8 text-center text-[13px] text-mute">
+          Nenhuma venda registrada neste período.
+        </p>
+      ) : (
+        <div>
+          {sales.map((sale) => (
+            <div
+              key={sale.id}
+              className="flex items-center gap-3 border-b border-border-row px-5 py-3 last:border-0 hover:bg-surface-subtle-2"
+            >
+              <Avatar name={sale.clientName} size={28} />
 
-        if (period === 'all') return true;
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[13px] font-semibold text-ink">{sale.clientName}</p>
+                <p className="text-[11.5px] text-ink-3">
+                  {sale.totalItems} {sale.totalItems === 1 ? 'item' : 'itens'} ·{' '}
+                  {sale.createdAt.toLocaleDateString('pt-BR')}
+                </p>
+              </div>
 
-        if (period === 'today') {
-            return (
-                date.getDate() === now.getDate() &&
-                date.getMonth() === now.getMonth() &&
-                date.getFullYear() === now.getFullYear()
-            );
-        }
-
-        if (period === 'month') {
-            return (
-                date.getMonth() === now.getMonth() &&
-                date.getFullYear() === now.getFullYear()
-            );
-        }
-
-        if (period === 'lastMonth') {
-            const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-
-            return (
-                date.getMonth() === lastMonth.getMonth() &&
-                date.getFullYear() === lastMonth.getFullYear()
-            );
-        }
-
-
-        if (period === 'year') {
-            return date.getFullYear() === now.getFullYear();
-        }
-
-        return true;
-    }
-
-    useEffect(() => {
-        if (!user) return;
-
-        async function fetchSales() {
-            setLoading(true);
-
-            const allSales = await getSalesByUser(user!.uid);
-
-            const filtered = allSales.filter((sale) =>
-                isSaleInPeriod(sale.createdAt, period)
-            );
-
-            setSales(filtered);
-            setLoading(false);
-        }
-
-        fetchSales();
-    }, [user, period]);
-
-    function calculateProfit(sale: Sale) {
-        if (!sale.items || sale.items.length === 0) return 0;
-
-        const totalCost = sale.items.reduce(
-            (sum, item) => sum + item.baseCost * item.quantity,
-            0
-        );
-
-        return sale.totalValue - totalCost;
-    }
-
-    return (
-        <div className="space-y-4">
-            <h2 className="text-lg font-semibold text-gray-900">
-                Vendas recentes
-            </h2>
-
-            <div className="bg-white rounded-xl border overflow-hidden">
-                {loading ? (
-                    <p className="p-6 text-sm text-gray-500">
-                        Carregando vendas...
-                    </p>
-                ) : sales.length === 0 ? (
-                    <p className="p-6 text-sm text-gray-500">
-                        Nenhuma venda registrada neste período.
-                    </p>
-                ) : (
-                    <table className="w-full text-sm">
-                        <thead className="bg-gray-50 text-gray-500">
-                            <tr>
-                                <th className="px-4 py-3 text-left">Data</th>
-                                <th className="px-4 py-3 text-left">Cliente</th>
-                                <th className="px-4 py-3 text-left">Total</th>
-                                <th className="px-4 py-3 text-left">Lucro</th>
-                                <th className="px-4 py-3 text-left">Margem</th>
-                            </tr>
-                        </thead>
-
-                        <tbody>
-                            {sales.map((sale) => {
-                                const margin =
-                                    sale.totalValue > 0
-                                        ? (sale.totalProfit / sale.totalValue) * 100
-                                        : 0;
-
-                                return (
-                                    <tr key={sale.id} className="border-t">
-                                        <td className="px-4 py-3">
-                                            {sale.createdAt.toLocaleDateString('pt-BR')}
-                                        </td>
-
-                                        <td className="px-4 py-3">
-                                            {sale.clientName}
-                                        </td>
-
-                                        <td className="px-4 py-3 font-medium">
-                                            R$ {sale.totalValue.toFixed(2)}
-                                        </td>
-
-                                        {(() => {
-                                            const profit = calculateProfit(sale);
-                                            const margin =
-                                                sale.totalValue > 0 ? (profit / sale.totalValue) * 100 : 0;
-
-                                            return (
-                                                <>
-                                                    <td
-                                                        className={`px-4 py-3 font-semibold ${profit >= 0 ? 'text-green-600' : 'text-red-600'
-                                                            }`}
-                                                    >
-                                                        R$ {profit.toFixed(2)}
-                                                    </td>
-
-                                                    <td className="px-4 py-3">
-                                                        {margin.toFixed(1)}%
-                                                    </td>
-                                                </>
-                                            );
-                                        })()}
-
-                                    </tr>
-                                );
-                            })}
-                        </tbody>
-                    </table>
-                )}
+              <div className="shrink-0 text-right">
+                <p className="font-mono text-[13px] font-semibold text-ink">
+                  R$ {sale.totalValue.toFixed(2)}
+                </p>
+                <p className="font-mono text-[11.5px] font-medium text-positive">
+                  R$ {sale.totalProfit.toFixed(2)}
+                </p>
+              </div>
             </div>
+          ))}
         </div>
-    );
+      )}
+    </div>
+  );
 }

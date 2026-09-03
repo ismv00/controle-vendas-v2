@@ -76,6 +76,8 @@ export async function getSalesByUser(userId: string): Promise<Sale[]> {
       totalCost,
       totalProfit,
 
+      status: data.status === 'pending' ? 'pending' : 'paid',
+
       createdAt: data.createdAt?.toDate?.() ?? new Date(),
     };
   });

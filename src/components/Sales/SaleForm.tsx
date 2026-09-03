@@ -1,10 +1,12 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { X } from 'lucide-react';
 import { Client } from '@/src/types/Client';
 import { Product } from '@/src/types/Product';
 import { Sale, SaleItem } from '@/src/types/Sale';
 import { ProductPrice } from '@/src/types/ProductPrice';
+import { formatBRL } from '@/src/lib/format';
 
 interface Props {
   clients: Client[];
@@ -18,23 +20,25 @@ interface Props {
     totalValue: number;
     totalProfit: number;
   }) => void | Promise<void>;
+  onCancel: () => void;
   initialData?: Sale | null;
 }
 
-export function SaleForm({ clients, products, prices, onSubmit, initialData }: Props) {
+const inputClass =
+  'w-full rounded-input border border-border-input bg-surface-subtle-2 px-3 py-2.5 text-[13px] text-ink placeholder:text-placeholder focus:outline-none focus:border-accent';
+const labelClass = 'mb-1.5 block text-[12px] font-semibold text-ink-2';
+
+export function SaleForm({ clients, products, prices, onSubmit, onCancel, initialData }: Props) {
   const [clientId, setClientId] = useState('');
   const [items, setItems] = useState<SaleItem[]>([]);
+  const [pendingProductId, setPendingProductId] = useState('');
+  const [pendingQty, setPendingQty] = useState(1);
 
-  /* =====================
-     ADICIONAR PRODUTO
-     ===================== */
-  function handleAddProduct(product: Product) {
+  function handleAddProduct(product: Product, quantity: number) {
     const exists = items.find((i) => i.productId === product.id);
     if (exists) return;
 
-    const productPrice = prices.find(
-      (p) => p.productId === product.id
-    );
+    const productPrice = prices.find((p) => p.productId === product.id);
 
     if (!productPrice) {
       alert('Este produto não possui preço de venda cadastrado.');
@@ -43,8 +47,10 @@ export function SaleForm({ clients, products, prices, onSubmit, initialData }: P
 
     const basePrice = Number(productPrice.salePrice.toFixed(2));
     const baseCost = Number(productPrice.baseCost.toFixed(2));
+    const qty = Math.max(1, quantity);
+    const subtotal = Number((basePrice * qty).toFixed(2));
+    const profit = Number((subtotal - baseCost * qty).toFixed(2));
 
-    const profit = Number((basePrice - baseCost).toFixed(2));
     setItems((prev) => [
       ...prev,
       {
@@ -54,77 +60,36 @@ export function SaleForm({ clients, products, prices, onSubmit, initialData }: P
         basePrice,
         price: basePrice,
         discountPercent: 0,
-        quantity: 1,
-        subtotal: basePrice,
+        quantity: qty,
+        subtotal,
         profit,
       },
     ]);
   }
 
-  /* =====================
-     ATUALIZA POR %
-     ===================== */
-  function updateDiscountPercent(index: number, percent: number) {
+  function updateQuantity(index: number, quantity: number) {
     setItems((prev) =>
       prev.map((item, i) => {
         if (i !== index) return item;
-
-        const price = item.basePrice * (1 + percent / 100);
-        const finalPrice = Number(price.toFixed(2));
-
-        const subtotal = Number((finalPrice * item.quantity).toFixed(2));
-        const profit = Number((subtotal - item.baseCost * item.quantity).toFixed(2));
-        return {
-          ...item,
-          discountPercent: percent,
-          price: finalPrice,
-          subtotal,
-          profit,
-        };
+        const subtotal = Number((item.price * quantity).toFixed(2));
+        const profit = Number((subtotal - item.baseCost * quantity).toFixed(2));
+        return { ...item, quantity, subtotal, profit };
       })
     );
   }
 
-  /* =====================
-     ATUALIZA POR PREÇO
-     ===================== */
   function updatePrice(index: number, price: number) {
     setItems((prev) =>
       prev.map((item, i) => {
         if (i !== index) return item;
 
-        const percent =
-          ((price - item.basePrice) / item.basePrice) * 100;
-
+        const percent = item.basePrice > 0 ? ((price - item.basePrice) / item.basePrice) * 100 : 0;
         const finalPrice = Number(price.toFixed(2));
-
         const subtotal = Number((finalPrice * item.quantity).toFixed(2));
         const profit = Number((subtotal - item.baseCost * item.quantity).toFixed(2));
-        return {
-          ...item,
-          price: finalPrice,
-          discountPercent: Number(percent.toFixed(2)),
-          subtotal,
-          profit,
-        };
-      })
-    );
-  }
 
-  /* =====================
-     QUANTIDADE
-     ===================== */
-  function updateQuantity(index: number, quantity: number) {
-    setItems((prev) =>
-      prev.map((item, i) =>
-        i === index
-          ? (() => {
-            const subtotal = Number((item.price * quantity).toFixed(2));
-            const profit = Number((subtotal - item.baseCost * quantity).toFixed(2));
-            return { ...item, quantity, subtotal, profit };
-          })()
-          : item
-      )
+        return { ...item, price: finalPrice, discountPercent: Number(percent.toFixed(2)), subtotal, profit };
+      })
     );
   }
 
@@ -132,21 +97,16 @@ export function SaleForm({ clients, products, prices, onSubmit, initialData }: P
     setItems((prev) => prev.filter((_, i) => i !== index));
   }
 
-  /* =====================
-     CÁLCULOS
-     ===================== */
   const totals = useMemo(() => {
     const totalItems = items.reduce((sum, i) => sum + i.quantity, 0);
     const totalValue = items.reduce((sum, i) => sum + i.subtotal, 0);
     const totalCost = items.reduce((sum, i) => sum + i.baseCost * i.quantity, 0);
-    const totalProfit = totalValue - totalCost
+    const totalProfit = totalValue - totalCost;
+    const margin = totalValue > 0 ? (totalProfit / totalValue) * 100 : 0;
 
-    return { totalItems, totalValue, totalCost, totalProfit };
+    return { totalItems, totalValue, totalCost, totalProfit, margin };
   }, [items]);
 
-  /* =====================
-     SUBMIT
-     ===================== */
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
@@ -162,7 +122,9 @@ export function SaleForm({ clients, products, prices, onSubmit, initialData }: P
       clientId,
       clientName: client.name,
       items,
-      ...totals,
+      totalItems: totals.totalItems,
+      totalValue: totals.totalValue,
+      totalProfit: totals.totalProfit,
     });
   }
 
@@ -177,162 +139,169 @@ export function SaleForm({ clients, products, prices, onSubmit, initialData }: P
   }, [initialData]);
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      {/* CLIENTE */}
-      <div>
-        <label className="block text-sm font-medium mb-1">Cliente</label>
-        <select
-          className="input"
-          value={clientId}
-          onChange={(e) => setClientId(e.target.value)}
-          required
-        >
-          <option value="">Selecione um cliente</option>
-          {clients.map((client) => (
-            <option key={client.id} value={client.id}>
-              {client.name}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {/* PRODUTOS */}
-      <div>
-        <label className="block text-sm font-medium mb-1">
-          Adicionar Produto
-        </label>
-
-        <select
-          className="input"
-          defaultValue=""
-          onChange={(e) => {
-            const product = products.find((p) => p.id === e.target.value);
-            if (product) handleAddProduct(product);
-            e.target.value = '';
-          }}
-        >
-          <option value="">Selecione um produto</option>
-          {products.map((product) => (
-            <option
-              key={product.id}
-              value={product.id}
-              disabled={items.some((i) => i.productId === product.id)}
+    <form onSubmit={handleSubmit}>
+      <div className="space-y-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-[1.3fr_1fr]">
+          <div>
+            <label className={labelClass}>Cliente</label>
+            <select
+              className={inputClass}
+              value={clientId}
+              onChange={(e) => setClientId(e.target.value)}
+              required
             >
-              {product.name}
-            </option>
-          ))}
-        </select>
-      </div>
+              <option value="">Selecione um cliente</option>
+              {clients.map((client) => (
+                <option key={client.id} value={client.id}>
+                  {client.name}
+                </option>
+              ))}
+            </select>
+          </div>
 
-      {/* ITENS */}
-      {items.length > 0 && (
-        <div className="space-y-2">
-          {items.map((item, index) => (
-            <div
-              key={item.productId}
-              className="rounded-lg border bg-gray-50 p-4 space-y-3"
+          <div>
+            <label className={labelClass}>Data</label>
+            <input
+              className={`${inputClass} font-mono`}
+              value={(initialData?.createdAt ?? new Date()).toLocaleDateString('pt-BR')}
+              disabled
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-[1fr_96px_auto] items-end gap-3">
+          <div>
+            <label className={labelClass}>Adicionar produto</label>
+            <select
+              className={inputClass}
+              value={pendingProductId}
+              onChange={(e) => setPendingProductId(e.target.value)}
             >
-              {/* Cabeçalho */}
-              <div className="flex justify-between items-center">
-                <span className="font-medium text-sm">
-                  {item.productName}
-                </span>
+              <option value="">Selecione um produto</option>
+              {products.map((product) => {
+                const price = prices.find((p) => p.productId === product.id);
+                return (
+                  <option
+                    key={product.id}
+                    value={product.id}
+                    disabled={items.some((i) => i.productId === product.id)}
+                  >
+                    {product.name} {price ? `— ${formatBRL(price.salePrice)}` : '(sem preço)'}
+                  </option>
+                );
+              })}
+            </select>
+          </div>
+
+          <div>
+            <label className={labelClass}>Qtd</label>
+            <input
+              type="number"
+              min={1}
+              value={pendingQty}
+              onChange={(e) => setPendingQty(Math.max(1, Number(e.target.value)))}
+              className={inputClass}
+            />
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              const product = products.find((p) => p.id === pendingProductId);
+              if (!product) return;
+              handleAddProduct(product, pendingQty);
+              setPendingProductId('');
+              setPendingQty(1);
+            }}
+            className="h-[42px] rounded-input border border-[#dcd8d0] bg-white px-4 text-[13px] font-semibold text-ink transition hover:border-ink-4"
+          >
+            Adicionar
+          </button>
+        </div>
+
+        {items.length > 0 && (
+          <div className="divide-y divide-border-row rounded-block border border-border-input">
+            {items.map((item, index) => (
+              <div key={item.productId} className="flex items-center gap-3 px-4 py-3">
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[13px] font-semibold text-ink">{item.productName}</p>
+                  <p className="flex items-center gap-1.5 text-[11.5px] text-ink-3">
+                    <input
+                      type="number"
+                      min={1}
+                      value={item.quantity}
+                      onChange={(e) => updateQuantity(index, Math.max(1, Number(e.target.value)))}
+                      className="w-14 rounded border border-border-input bg-surface-subtle-2 px-1.5 py-0.5 text-[12px] font-mono"
+                    />
+                    ×
+                    <input
+                      type="number"
+                      step="0.01"
+                      min={0}
+                      value={item.price}
+                      onChange={(e) => updatePrice(index, Math.max(0, Number(e.target.value)))}
+                      className="w-20 rounded border border-border-input bg-surface-subtle-2 px-1.5 py-0.5 text-[12px] font-mono"
+                    />
+                  </p>
+                </div>
+
+                <div className="shrink-0 text-right">
+                  <p className="font-mono text-[13px] font-semibold text-ink">
+                    {formatBRL(item.subtotal)}
+                  </p>
+                  <p className="font-mono text-[11.5px] font-medium text-positive">
+                    {formatBRL(item.profit)}
+                  </p>
+                </div>
 
                 <button
                   type="button"
-                  className="text-xs text-red-500 hover:text-red-700"
                   onClick={() => removeItem(index)}
+                  className="shrink-0 text-ink-4 transition hover:text-negative"
                 >
-                  Remover
+                  <X size={16} />
                 </button>
               </div>
+            ))}
+          </div>
+        )}
 
-              {/* Campos */}
-              <div className="grid grid-cols-4 gap-4 items-end">
-                {/* Quantidade */}
-                <div>
-                  <label className="block text-xs text-gray-500 mb-1">
-                    Qtd
-                  </label>
-                  <input
-                    type="number"
-                    min={1}
-                    className="input"
-                    value={item.quantity}
-                    onChange={(e) =>
-                      updateQuantity(index, Number(e.target.value))
-                    }
-                  />
-                </div>
+        <div className="flex items-center justify-between rounded-block bg-surface-subtle-2 px-4 py-3 text-[12.5px]">
+          <div className="flex gap-5">
+            <span className="text-ink-3">
+              Itens <span className="font-mono font-semibold text-ink">{totals.totalItems}</span>
+            </span>
+            <span className="text-ink-3">
+              Total{' '}
+              <span className="font-mono font-semibold text-ink">{formatBRL(totals.totalValue)}</span>
+            </span>
+            <span className="text-ink-3">
+              Lucro{' '}
+              <span className="font-mono font-semibold text-positive">
+                {formatBRL(totals.totalProfit)}
+              </span>
+            </span>
+          </div>
 
-                {/* Preço */}
-                <div>
-                  <label className="block text-xs text-gray-500 mb-1">
-                    Preço Unit. (R$)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    className="input"
-                    value={item.price}
-                    onChange={(e) =>
-                      updatePrice(index, Number(e.target.value))
-                    }
-                  />
-                </div>
-
-                {/* Desconto / Acréscimo */}
-                <div>
-                  <label className="block text-xs text-gray-500 mb-1">
-                    DESC / ACRES %
-                  </label>
-                  <input
-                    type="number"
-                    className="input"
-                    value={item.discountPercent}
-                    onChange={(e) =>
-                      updateDiscountPercent(index, Number(e.target.value))
-                    }
-                  />
-                </div>
-
-                {/* Subtotal */}
-                <div className="text-right">
-                  <span className="block text-xs text-gray-500 mb-1">
-                    Subtotal
-                  </span>
-                  <span className="font-semibold">
-                    R$ {item.subtotal.toFixed(2)}
-                  </span>
-                </div>
-              </div>
-            </div>
-          ))}
+          <span className="text-ink-3">
+            Margem <span className="font-mono font-semibold text-ink">{totals.margin.toFixed(1)}%</span>
+          </span>
         </div>
-      )}
-
-      {/* RESUMO */}
-      <div className="mt-6 border-t pt-4 text-sm space-y-1">
-        <p>
-          Itens: <span className="font-medium">{totals.totalItems}</span>
-        </p>
-        <p>
-          Total:{' '}
-          <span className="font-medium">
-            R$ {totals.totalValue.toFixed(2)}
-          </span>
-        </p>
-        <p className="text-green-600">
-          Lucro:{' '}
-          <span className="font-medium">
-            R$ {totals.totalProfit.toFixed(2)}
-          </span>
-        </p>
       </div>
 
-      <div className="flex justify-end">
-        <button type="submit" className="btn-primary">
-          Salvar Venda
+      <div className="-mx-6 -mb-5 mt-6 flex justify-end gap-2 rounded-b-modal border-t border-border-divider-2 bg-surface-subtle-2 px-6 py-4">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="rounded-input border border-[#dcd8d0] bg-white px-4 py-2 text-[13px] font-semibold text-ink transition hover:border-ink-4"
+        >
+          Cancelar
+        </button>
+        <button
+          type="submit"
+          className="rounded-input bg-accent px-5 py-2 text-[13px] font-semibold text-white shadow-btn transition hover:opacity-90"
+        >
+          Salvar venda
         </button>
       </div>
     </form>
