@@ -219,6 +219,7 @@ function SalesPageContent() {
         }}
       >
         <SaleForm
+          key={editingSale?.id ?? 'new'}
           clients={clients}
           products={products}
           prices={prices}

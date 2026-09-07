@@ -174,6 +174,7 @@ export default function ProductsPage() {
         }}
       >
         <ProductForm
+          key={editingProduct?.id ?? 'new'}
           onSubmit={handleAddOrEditProduct}
           onCancel={() => {
             setOpen(false);

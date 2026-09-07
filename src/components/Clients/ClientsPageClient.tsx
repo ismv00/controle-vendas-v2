@@ -161,6 +161,7 @@ export default function ClientsPageClient() {
                 }}
             >
                 <ClientForm
+                    key={editingClient?.id ?? 'new'}
                     onSubmit={handleAddOrEditClient}
                     onCancel={() => {
                         setOpen(false);

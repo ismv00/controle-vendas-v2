@@ -1,14 +1,8 @@
-type Bucket = { date: Date; value: number };
+type Bucket = { label: string; value: number };
 
 type Props = {
   buckets: Bucket[];
 };
-
-const MONTHS = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
-
-function formatAxis(date: Date) {
-  return `${String(date.getDate()).padStart(2, '0')} ${MONTHS[date.getMonth()]}`;
-}
 
 export function TrendChart({ buckets }: Props) {
   const max = Math.max(...buckets.map((b) => b.value), 1);
@@ -26,16 +20,16 @@ export function TrendChart({ buckets }: Props) {
               key={i}
               className="flex-1 rounded-t-[4px] rounded-b-[2px]"
               style={{ height: `${percent}%`, background: color }}
-              title={`${bucket.date.toLocaleDateString('pt-BR')}: R$ ${bucket.value.toFixed(2)}`}
+              title={`${bucket.label}: R$ ${bucket.value.toFixed(2)}`}
             />
           );
         })}
       </div>
 
       <div className="mt-2 flex justify-between font-mono text-[10.5px] text-white/40">
-        <span>{formatAxis(buckets[0].date)}</span>
-        <span>{formatAxis(buckets[Math.floor(buckets.length / 2)].date)}</span>
-        <span>{formatAxis(buckets[buckets.length - 1].date)}</span>
+        <span>{buckets[0].label}</span>
+        {buckets.length > 2 && <span>{buckets[Math.floor(buckets.length / 2)].label}</span>}
+        <span>{buckets[buckets.length - 1].label}</span>
       </div>
     </div>
   );

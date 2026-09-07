@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Client } from '@/src/types/Client';
 
 interface Props {
@@ -14,24 +14,10 @@ const inputClass =
 const labelClass = 'mb-1.5 block text-[12px] font-semibold text-ink-2';
 
 export function ClientForm({ onSubmit, onCancel, initialData }: Props) {
-  const [name, setName] = useState('');
-  const [fantasy, setFantasy] = useState('');
-  const [address, setAddress] = useState('');
-  const [phone, setPhone] = useState('');
-
-  useEffect(() => {
-    if (initialData) {
-      setName(initialData.name);
-      setFantasy(initialData.fantasy);
-      setAddress(initialData.address);
-      setPhone(initialData.phone);
-    } else {
-      setName('');
-      setFantasy('');
-      setAddress('');
-      setPhone('');
-    }
-  }, [initialData]);
+  const [name, setName] = useState(initialData?.name ?? '');
+  const [fantasy, setFantasy] = useState(initialData?.fantasy ?? '');
+  const [address, setAddress] = useState(initialData?.address ?? '');
+  const [phone, setPhone] = useState(initialData?.phone ?? '');
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

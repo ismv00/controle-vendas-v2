@@ -13,6 +13,7 @@ import { getProductPricesByUser } from '@/src/services/priceService';
 import { getSalesByUser } from '@/src/services/saleService';
 import { isInPeriod } from '@/src/lib/period';
 import { Avatar } from '@/src/components/ui/Avatar';
+import { ProfileModal } from '@/src/components/Layout/ProfileModal';
 
 // Não há ainda uma feature de metas — valor fixo até existir configuração real.
 const MONTHLY_GOAL = 18000;
@@ -28,12 +29,13 @@ const NAV_ITEMS: { label: string; href: string; icon: typeof LayoutGrid; countKe
 ];
 
 export function Sidebar() {
-  const { user } = useAuth();
+  const { user, companyName } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
   const [counts, setCounts] = useState({ clients: 0, products: 0, prices: 0, sales: 0 });
   const [monthRevenue, setMonthRevenue] = useState(0);
+  const [profileOpen, setProfileOpen] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -78,7 +80,7 @@ export function Sidebar() {
 
   const goalPercent = Math.min(100, Math.round((monthRevenue / MONTHLY_GOAL) * 100));
   const displayName = user?.displayName || user?.email?.split('@')[0] || 'Usuário';
-  const subLabel = user?.email ?? '';
+  const subLabel = companyName || user?.email || '';
 
   return (
     <aside className="flex h-screen w-[252px] shrink-0 flex-col gap-[26px] border-r border-white/10 bg-dark px-4 py-[22px]">
@@ -145,11 +147,17 @@ export function Sidebar() {
         </div>
 
         <div className="flex items-center gap-2 px-1">
-          <Avatar name={displayName} size={30} tone="dark" />
-          <div className="min-w-0 flex-1 leading-tight">
-            <p className="truncate text-[12.5px] font-semibold text-white">{displayName}</p>
-            <p className="truncate text-[11px] text-white/45">{subLabel}</p>
-          </div>
+          <button
+            onClick={() => setProfileOpen(true)}
+            className="flex min-w-0 flex-1 items-center gap-2 rounded-iconbtn py-0.5 text-left transition hover:opacity-80"
+            title="Ver perfil"
+          >
+            <Avatar name={displayName} src={user?.photoURL} size={30} tone="dark" />
+            <div className="min-w-0 flex-1 leading-tight">
+              <p className="truncate text-[12.5px] font-semibold text-white">{displayName}</p>
+              <p className="truncate text-[11px] text-white/45">{subLabel}</p>
+            </div>
+          </button>
           <button
             onClick={handleLogout}
             className="shrink-0 text-[11.5px] font-medium text-white/60 transition hover:text-white"
@@ -158,6 +166,8 @@ export function Sidebar() {
           </button>
         </div>
       </div>
+
+      <ProfileModal open={profileOpen} onClose={() => setProfileOpen(false)} />
     </aside>
   );
 }

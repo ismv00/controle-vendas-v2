@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Protótipo de referência do handoff de design — não é código de produção.
+    "design_handoff_venda_facil/**",
   ]),
 ]);
 

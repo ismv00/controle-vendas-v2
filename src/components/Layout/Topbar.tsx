@@ -1,26 +1,13 @@
 'use client';
 
-import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 
 export function Topbar() {
   const router = useRouter();
-  const [search, setSearch] = useState('');
 
   return (
-    <header className="sticky top-0 z-30 flex items-center justify-between gap-4 border-b border-border-main bg-white/72 px-8 py-4 backdrop-blur-[8px]">
-      <div className="relative w-full max-w-[340px]">
-        <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-4" />
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Buscar cliente, produto ou venda"
-          className="w-full rounded-input bg-fill-input py-[9px] pl-9 pr-3 text-[13px] text-ink placeholder:text-placeholder focus:outline-none"
-        />
-      </div>
-
+    <header className="sticky top-0 z-30 flex items-center justify-end gap-4 border-b border-border-main bg-white/72 px-8 py-4 backdrop-blur-[8px]">
       <div className="flex items-center gap-2">
         <button
           onClick={() => router.push('/clients?novo=true')}

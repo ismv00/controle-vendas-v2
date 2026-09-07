@@ -21,15 +21,22 @@ function calculateProfit(price: ProductPrice): number {
 
 export function PriceList({ prices, onEdit, onDelete }: Props) {
   const [filter, setFilter] = useState<Filter>('all');
+  const [search, setSearch] = useState('');
 
   const negativeCount = useMemo(() => prices.filter((p) => calculateProfit(p) < 0).length, [prices]);
   const lowMarginCount = useMemo(() => prices.filter((p) => p.marginPercent < 60).length, [prices]);
 
   const filtered = useMemo(() => {
-    if (filter === 'negative') return prices.filter((p) => calculateProfit(p) < 0);
-    if (filter === 'lowMargin') return prices.filter((p) => p.marginPercent < 60);
-    return prices;
-  }, [prices, filter]);
+    let result = prices;
+
+    if (filter === 'negative') result = result.filter((p) => calculateProfit(p) < 0);
+    if (filter === 'lowMargin') result = result.filter((p) => p.marginPercent < 60);
+
+    const term = search.trim().toLowerCase();
+    if (term) result = result.filter((p) => p.productName?.toLowerCase().includes(term));
+
+    return result;
+  }, [prices, filter, search]);
 
   const chips: { key: Filter; label: string }[] = [
     { key: 'all', label: 'Todos' },
@@ -39,20 +46,30 @@ export function PriceList({ prices, onEdit, onDelete }: Props) {
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap gap-2">
-        {chips.map((chip) => (
-          <button
-            key={chip.key}
-            onClick={() => setFilter(chip.key)}
-            className={`rounded-pill px-3 py-1.5 text-[12px] font-semibold transition ${
-              filter === chip.key
-                ? 'bg-dark text-white'
-                : 'border border-border-input bg-white text-ink-2 hover:border-ink-4'
-            }`}
-          >
-            {chip.label}
-          </button>
-        ))}
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap gap-2">
+          {chips.map((chip) => (
+            <button
+              key={chip.key}
+              onClick={() => setFilter(chip.key)}
+              className={`rounded-pill px-3 py-1.5 text-[12px] font-semibold transition ${
+                filter === chip.key
+                  ? 'bg-dark text-white'
+                  : 'border border-border-input bg-white text-ink-2 hover:border-ink-4'
+              }`}
+            >
+              {chip.label}
+            </button>
+          ))}
+        </div>
+
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Buscar produto"
+          className="w-full max-w-[220px] rounded-block bg-fill-chip px-3 py-2 text-[12.5px] text-ink placeholder:text-placeholder focus:outline-none"
+        />
       </div>
 
       <div className="overflow-hidden rounded-card border border-border-divider-2 bg-surface">

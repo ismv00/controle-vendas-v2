@@ -1,5 +1,10 @@
+'use client';
+
+import { useState } from 'react';
+
 type Props = {
   name: string;
+  src?: string | null;
   size?: number;
   tone?: 'light' | 'dark';
   className?: string;
@@ -17,7 +22,23 @@ const TONE_CLASSES = {
   dark: 'bg-white/10 text-white',
 };
 
-export function Avatar({ name, size = 30, tone = 'light', className = '' }: Props) {
+export function Avatar({ name, src, size = 30, tone = 'light', className = '' }: Props) {
+  const [failed, setFailed] = useState(false);
+
+  if (src && !failed) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={src}
+        alt={name}
+        referrerPolicy="no-referrer"
+        onError={() => setFailed(true)}
+        className={`shrink-0 rounded-iconbtn object-cover ${className}`}
+        style={{ width: size, height: size }}
+      />
+    );
+  }
+
   return (
     <div
       className={`flex shrink-0 items-center justify-center rounded-iconbtn font-semibold ${TONE_CLASSES[tone]} ${className}`}

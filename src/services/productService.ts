@@ -7,7 +7,6 @@ import {
   deleteDoc,
   doc,
   updateDoc,
-  orderBy,
 } from 'firebase/firestore';
 
 import { db } from '@/src/lib/firebase';

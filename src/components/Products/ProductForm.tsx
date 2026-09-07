@@ -31,58 +31,42 @@ const labelClass = 'mb-1.5 block text-[12px] font-semibold text-ink-2';
 export function ProductForm({ onSubmit, onCancel, initialData, initialPrice }: Props) {
   const { user } = useAuth();
 
-  const [name, setName] = useState('');
-  const [category, setCategory] = useState('');
-  const [cost, setCost] = useState('');
-  const [operationalExpensePercent, setOperationalExpensePercent] = useState('0');
-  const [marginPercent, setMarginPercent] = useState('0');
+  const [name, setName] = useState(initialData?.name ?? '');
+  const [category, setCategory] = useState(initialData?.category ?? '');
+  const [cost, setCost] = useState(initialData ? String(initialData.cost) : '');
+  const [operationalExpensePercent, setOperationalExpensePercent] = useState(
+    String(initialPrice?.operationalExpensePercent ?? 0)
+  );
+  const [marginPercent, setMarginPercent] = useState(String(initialPrice?.marginPercent ?? 0));
 
-  const [categories, setCategories] = useState<string[]>([]);
+  const [categories, setCategories] = useState<string[]>(
+    initialData?.category ? [initialData.category] : []
+  );
   const [newCategory, setNewCategory] = useState('');
 
   useEffect(() => {
-    if (!user) {
-      setCategories([]);
-      return;
-    }
+    if (!user) return;
+
+    let cancelled = false;
 
     async function loadCategories() {
       const userCategories = await getCategoriesByUser(user!.uid);
+      if (cancelled) return;
 
-      if (user!.uid === 'wSkNQJ8eyFh6FL4E1Z51vfopnQc2') {
-        setCategories(Array.from(new Set([...PRODUCT_CATEGORIES, ...userCategories])));
-      } else {
-        setCategories(userCategories);
-      }
+      const fetched =
+        user!.uid === 'wSkNQJ8eyFh6FL4E1Z51vfopnQc2'
+          ? Array.from(new Set([...PRODUCT_CATEGORIES, ...userCategories]))
+          : userCategories;
+
+      setCategories((prev) => Array.from(new Set([...prev, ...fetched])));
     }
 
     loadCategories();
+
+    return () => {
+      cancelled = true;
+    };
   }, [user]);
-
-  useEffect(() => {
-    if (!initialData) {
-      setName('');
-      setCategory('');
-      setCost('');
-      setOperationalExpensePercent('0');
-      setMarginPercent('0');
-      return;
-    }
-
-    setName(initialData.name);
-    setCost(String(initialData.cost));
-    setOperationalExpensePercent(String(initialPrice?.operationalExpensePercent ?? 0));
-    setMarginPercent(String(initialPrice?.marginPercent ?? 0));
-
-    setCategories((prev) => {
-      if (initialData.category && !prev.includes(initialData.category)) {
-        return [...prev, initialData.category];
-      }
-      return prev;
-    });
-
-    setCategory(initialData.category);
-  }, [initialData, initialPrice]);
 
   const costNumber = Number(cost) || 0;
   const expenseNumber = Number(operationalExpensePercent) || 0;

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { X } from 'lucide-react';
 import { Client } from '@/src/types/Client';
 import { Product } from '@/src/types/Product';
@@ -29,8 +29,8 @@ const inputClass =
 const labelClass = 'mb-1.5 block text-[12px] font-semibold text-ink-2';
 
 export function SaleForm({ clients, products, prices, onSubmit, onCancel, initialData }: Props) {
-  const [clientId, setClientId] = useState('');
-  const [items, setItems] = useState<SaleItem[]>([]);
+  const [clientId, setClientId] = useState(initialData?.clientId ?? '');
+  const [items, setItems] = useState<SaleItem[]>(initialData?.items ?? []);
   const [pendingProductId, setPendingProductId] = useState('');
   const [pendingQty, setPendingQty] = useState(1);
 
@@ -127,16 +127,6 @@ export function SaleForm({ clients, products, prices, onSubmit, onCancel, initia
       totalProfit: totals.totalProfit,
     });
   }
-
-  useEffect(() => {
-    if (initialData) {
-      setClientId(initialData.clientId);
-      setItems(initialData.items);
-    } else {
-      setClientId('');
-      setItems([]);
-    }
-  }, [initialData]);
 
   return (
     <form onSubmit={handleSubmit}>

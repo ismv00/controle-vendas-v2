@@ -11,7 +11,7 @@ import {
 } from 'firebase/firestore';
 
 import { db } from '../lib/firebase';
-import { Sale } from '../types/Sale';
+import { Sale, SaleItem } from '../types/Sale';
 
 const COLLECTION = 'sales';
 
@@ -38,7 +38,7 @@ export async function getSalesByUser(userId: string): Promise<Sale[]> {
   return snapshot.docs.map((docSnap) => {
     const data = docSnap.data();
 
-    const items = (data.items ?? []).map((item: any) => {
+    const items: SaleItem[] = (data.items ?? []).map((item: Record<string, unknown>) => {
       const baseCost =
         typeof item.baseCost === 'number'
           ? item.baseCost
@@ -49,13 +49,13 @@ export async function getSalesByUser(userId: string): Promise<Sale[]> {
       return {
         ...item,
         baseCost,
-      };
+      } as SaleItem;
     });
 
     const totalCost =
       typeof data.totalCost === 'number'
         ? data.totalCost
-        : items.reduce((sum: number, item: any) => sum + item.baseCost * (item.quantity ?? 1), 0);
+        : items.reduce((sum, item) => sum + item.baseCost * (item.quantity ?? 1), 0);
 
     const totalValue = typeof data.totalValue === 'number' ? data.totalValue : 0;
 
