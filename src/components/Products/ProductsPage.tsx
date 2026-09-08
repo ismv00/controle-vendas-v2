@@ -48,45 +48,50 @@ export default function ProductsPage() {
   async function handleAddOrEditProduct(data: ProductFormData) {
     if (!user) return;
 
-    let productId = editingProduct?.id;
+    try {
+      let productId = editingProduct?.id;
 
-    if (editingProduct) {
-      await updateProduct(editingProduct.id, {
-        name: data.name,
-        category: data.category,
-        cost: data.cost,
-      });
-    } else {
-      productId = await createProduct({
-        name: data.name,
-        category: data.category,
-        cost: data.cost,
-        userId: user.uid,
-        createdAt: new Date(),
-      });
-    }
-
-    if (productId) {
-      const existingPrice = prices.find((p) => p.productId === productId);
-      const pricePayload = {
-        productId,
-        productName: data.name,
-        baseCost: data.cost + data.cost * (data.operationalExpensePercent / 100),
-        operationalExpensePercent: data.operationalExpensePercent,
-        marginPercent: data.marginPercent,
-        salePrice: data.salePrice,
-      };
-
-      if (existingPrice) {
-        await updateProductPrice(existingPrice.id, pricePayload);
+      if (editingProduct) {
+        await updateProduct(editingProduct.id, {
+          name: data.name,
+          category: data.category,
+          cost: data.cost,
+        });
       } else {
-        await createProductPrice({ ...pricePayload, userId: user.uid });
+        productId = await createProduct({
+          name: data.name,
+          category: data.category,
+          cost: data.cost,
+          userId: user.uid,
+          createdAt: new Date(),
+        });
       }
-    }
 
-    await loadData();
-    setOpen(false);
-    setEditingProduct(null);
+      if (productId) {
+        const existingPrice = prices.find((p) => p.productId === productId);
+        const pricePayload = {
+          productId,
+          productName: data.name,
+          baseCost: data.cost + data.cost * (data.operationalExpensePercent / 100),
+          operationalExpensePercent: data.operationalExpensePercent,
+          marginPercent: data.marginPercent,
+          salePrice: data.salePrice,
+        };
+
+        if (existingPrice) {
+          await updateProductPrice(existingPrice.id, pricePayload);
+        } else {
+          await createProductPrice({ ...pricePayload, userId: user.uid });
+        }
+      }
+
+      await loadData();
+      setOpen(false);
+      setEditingProduct(null);
+    } catch (err) {
+      console.error(err);
+      alert('Não foi possível salvar o produto. Tente novamente.');
+    }
   }
 
   async function handleDeleteProduct(id: string) {
@@ -94,9 +99,13 @@ export default function ProductsPage() {
 
     if (!confirmed) return;
 
-    await deleteProduct(id);
-
-    setProducts((prev) => prev.filter((p) => p.id !== id));
+    try {
+      await deleteProduct(id);
+      setProducts((prev) => prev.filter((p) => p.id !== id));
+    } catch (err) {
+      console.error(err);
+      alert('Não foi possível excluir o produto. Tente novamente.');
+    }
   }
 
   useEffect(() => {

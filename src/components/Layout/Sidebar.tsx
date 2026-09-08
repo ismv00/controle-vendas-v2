@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { LayoutGrid, Users, Package, Tags, ShoppingBag } from 'lucide-react';
+import { LayoutGrid, Users, Package, Tags, ShoppingBag, X } from 'lucide-react';
 
 import { useAuth } from '@/src/contexts/AuthContext';
 import { logout } from '@/src/services/authService';
@@ -28,7 +28,12 @@ const NAV_ITEMS: { label: string; href: string; icon: typeof LayoutGrid; countKe
   { label: 'Vendas', href: '/vendas', icon: ShoppingBag, countKey: 'sales' },
 ];
 
-export function Sidebar() {
+type Props = {
+  mobileOpen: boolean;
+  onClose: () => void;
+};
+
+export function Sidebar({ mobileOpen, onClose }: Props) {
   const { user, companyName } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
@@ -83,7 +88,16 @@ export function Sidebar() {
   const subLabel = companyName || user?.email || '';
 
   return (
-    <aside className="flex h-screen w-[252px] shrink-0 flex-col gap-[26px] border-r border-white/10 bg-dark px-4 py-[22px]">
+    <>
+      {mobileOpen && (
+        <div className="fixed inset-0 z-40 bg-black/40 lg:hidden" onClick={onClose} />
+      )}
+
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 flex h-screen w-[252px] shrink-0 flex-col gap-[26px] border-r border-white/10 bg-dark px-4 py-[22px] transition-transform duration-200 lg:static lg:translate-x-0 ${
+          mobileOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
       {/* Marca */}
       <div className="flex items-center gap-3 px-1">
         <div className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-logo bg-accent text-[15px] font-bold text-white">
@@ -93,6 +107,12 @@ export function Sidebar() {
           <p className="text-[14.5px] font-bold text-white">Venda Fácil</p>
           <p className="text-[11px] text-white/50">Controle de vendas</p>
         </div>
+        <button
+          onClick={onClose}
+          className="ml-auto flex h-7 w-7 shrink-0 items-center justify-center rounded-iconbtn text-white/60 transition hover:text-white lg:hidden"
+        >
+          <X size={16} />
+        </button>
       </div>
 
       {/* Navegação */}
@@ -168,6 +188,7 @@ export function Sidebar() {
       </div>
 
       <ProfileModal open={profileOpen} onClose={() => setProfileOpen(false)} />
-    </aside>
+      </aside>
+    </>
   );
 }

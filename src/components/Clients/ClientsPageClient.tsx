@@ -37,34 +37,39 @@ export default function ClientsPageClient() {
     }) {
         if (!user) return;
 
-        if (editingClient) {
-            await updateClient(editingClient.id, data);
+        try {
+            if (editingClient) {
+                await updateClient(editingClient.id, data);
 
-            setClients((prev) =>
-                prev.map((c) =>
-                    c.id === editingClient.id ? { ...c, ...data } : c
-                )
-            );
-        } else {
-            const newClientData = {
-                ...data,
-                userId: user.uid,
-            };
+                setClients((prev) =>
+                    prev.map((c) =>
+                        c.id === editingClient.id ? { ...c, ...data } : c
+                    )
+                );
+            } else {
+                const newClientData = {
+                    ...data,
+                    userId: user.uid,
+                };
 
-            const id = await createClient(newClientData);
+                const id = await createClient(newClientData);
 
-            setClients((prev) => [
-                ...prev,
-                {
-                    id,
-                    ...newClientData,
-                    createdAt: new Date(),
-                },
-            ]);
+                setClients((prev) => [
+                    ...prev,
+                    {
+                        id,
+                        ...newClientData,
+                        createdAt: new Date(),
+                    },
+                ]);
+            }
+
+            setEditingClient(null);
+            setOpen(false);
+        } catch (err) {
+            console.error(err);
+            alert('Não foi possível salvar o cliente. Tente novamente.');
         }
-
-        setEditingClient(null);
-        setOpen(false);
     }
 
     async function handleDelete(client: Client) {
@@ -74,9 +79,13 @@ export default function ClientsPageClient() {
 
         if (!confirmDelete) return;
 
-        await deleteClient(client.id);
-
-        setClients((prev) => prev.filter((c) => c.id !== client.id));
+        try {
+            await deleteClient(client.id);
+            setClients((prev) => prev.filter((c) => c.id !== client.id));
+        } catch (err) {
+            console.error(err);
+            alert('Não foi possível excluir o cliente. Tente novamente.');
+        }
     }
 
     useEffect(() => {

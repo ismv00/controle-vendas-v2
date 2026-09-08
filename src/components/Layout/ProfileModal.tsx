@@ -26,6 +26,7 @@ export function ProfileModal({ open, onClose }: Props) {
   const [companyInput, setCompanyInput] = useState('');
   const [savingCompany, setSavingCompany] = useState(false);
   const [savedJustNow, setSavedJustNow] = useState(false);
+  const [companyError, setCompanyError] = useState('');
 
   const [providers, setProviders] = useState<string[]>([]);
   const [linkLoading, setLinkLoading] = useState(false);
@@ -36,6 +37,7 @@ export function ProfileModal({ open, onClose }: Props) {
       setCompanyInput(companyName);
       setProviders(user?.providerData.map((p) => p.providerId) ?? []);
       setLinkError('');
+      setCompanyError('');
       setSavedJustNow(false);
     }
   }, [open, companyName, user]);
@@ -45,10 +47,14 @@ export function ProfileModal({ open, onClose }: Props) {
     if (!user) return;
 
     setSavingCompany(true);
+    setCompanyError('');
 
     try {
       await updateUserProfile(user.uid, { companyName: companyInput.trim() });
       setSavedJustNow(true);
+    } catch (err) {
+      console.error(err);
+      setCompanyError('Não foi possível salvar. Tente novamente.');
     } finally {
       setSavingCompany(false);
     }
@@ -125,6 +131,7 @@ export function ProfileModal({ open, onClose }: Props) {
               {savingCompany ? 'Salvando...' : 'Salvar'}
             </button>
           </div>
+          {companyError && <p className="mt-1.5 text-[11.5px] text-negative">{companyError}</p>}
           {savedJustNow && <p className="mt-1.5 text-[11.5px] text-positive">Salvo.</p>}
           <p className="mt-1.5 text-[11.5px] text-ink-4">Aparece no menu lateral e no dashboard.</p>
         </form>

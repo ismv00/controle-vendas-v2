@@ -77,26 +77,36 @@ export default function PriceTablePage() {
   async function handleCreatePrice(data: ProductPriceFormData) {
     if (!user) return;
 
-    if (editingPrice) {
-      await updateProductPrice(editingPrice.id, data);
-    } else {
-      await createProductPrice({
-        ...data,
-        userId: user.uid,
-      });
-    }
+    try {
+      if (editingPrice) {
+        await updateProductPrice(editingPrice.id, data);
+      } else {
+        await createProductPrice({
+          ...data,
+          userId: user.uid,
+        });
+      }
 
-    setOpen(false);
-    setEditingPrice(null);
-    loadData();
+      setOpen(false);
+      setEditingPrice(null);
+      await loadData();
+    } catch (err) {
+      console.error(err);
+      alert('Não foi possível salvar o preço. Tente novamente.');
+    }
   }
 
   async function handleDeletePrice(id: string) {
     const confirm = window.confirm('Deseja realmente excluir este preço?');
     if (!confirm) return;
 
-    await deleteProductPrice(id);
-    loadData();
+    try {
+      await deleteProductPrice(id);
+      await loadData();
+    } catch (err) {
+      console.error(err);
+      alert('Não foi possível excluir o preço. Tente novamente.');
+    }
   }
 
   function handleEditPrice(price: ProductPrice) {

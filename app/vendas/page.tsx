@@ -95,27 +95,32 @@ function SalesPageContent() {
   }) {
     const totalCost = data.items.reduce((sum, item) => sum + item.baseCost * item.quantity, 0);
 
-    if (editingSale) {
-      await updateSale(editingSale.id, {
-        ...data,
-        totalCost,
-      });
+    try {
+      if (editingSale) {
+        await updateSale(editingSale.id, {
+          ...data,
+          totalCost,
+        });
 
-      setSales((prev) =>
-        prev.map((s) => (s.id === editingSale.id ? { ...s, ...data, totalCost } : s))
-      );
-    } else {
-      await createSale({
-        ...data,
-        totalCost,
-        userId: user!.uid,
-      });
+        setSales((prev) =>
+          prev.map((s) => (s.id === editingSale.id ? { ...s, ...data, totalCost } : s))
+        );
+      } else {
+        await createSale({
+          ...data,
+          totalCost,
+          userId: user!.uid,
+        });
 
-      loadData(user!.uid);
+        await loadData(user!.uid);
+      }
+
+      setEditingSale(null);
+      setOpen(false);
+    } catch (err) {
+      console.error(err);
+      alert('Não foi possível salvar a venda. Tente novamente.');
     }
-
-    setEditingSale(null);
-    setOpen(false);
   }
 
   async function handleDeleteSale(id: string) {
@@ -133,11 +138,18 @@ function SalesPageContent() {
   }
 
   async function handleToggleStatus(sale: Sale) {
-    const nextStatus = (sale.status ?? 'paid') === 'paid' ? 'pending' : 'paid';
+    const previousStatus = sale.status ?? 'paid';
+    const nextStatus = previousStatus === 'paid' ? 'pending' : 'paid';
 
     setSales((prev) => prev.map((s) => (s.id === sale.id ? { ...s, status: nextStatus } : s)));
 
-    await updateSale(sale.id, { status: nextStatus });
+    try {
+      await updateSale(sale.id, { status: nextStatus });
+    } catch (err) {
+      console.error(err);
+      setSales((prev) => prev.map((s) => (s.id === sale.id ? { ...s, status: previousStatus } : s)));
+      alert('Não foi possível atualizar o status da venda. Tente novamente.');
+    }
   }
 
   const summary = useMemo(() => {
