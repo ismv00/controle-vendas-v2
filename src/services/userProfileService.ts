@@ -8,6 +8,7 @@ export type UserProfile = {
   companyName: string;
   logoUrl: string;
   monthlyGoal: number;
+  pixKey: string;
 };
 
 export function subscribeToUserProfile(
@@ -20,6 +21,7 @@ export function subscribeToUserProfile(
       companyName: data?.companyName ?? '',
       logoUrl: data?.logoUrl ?? '',
       monthlyGoal: typeof data?.monthlyGoal === 'number' ? data.monthlyGoal : 0,
+      pixKey: data?.pixKey ?? '',
     });
   });
 }

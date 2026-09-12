@@ -25,7 +25,7 @@ const labelClass = 'mb-1.5 block text-[13px] font-semibold text-ink-2';
 const cardClass = 'rounded-card border border-border-divider-2 bg-surface p-6';
 
 function ProfilePageContent() {
-  const { user, companyName, logoUrl, monthlyGoal } = useAuth();
+  const { user, companyName, logoUrl, monthlyGoal, pixKey } = useAuth();
   const searchParams = useSearchParams();
 
   const [showOnboarding, setShowOnboarding] = useState(searchParams.get('onboarding') === 'true');
@@ -39,6 +39,11 @@ function ProfilePageContent() {
   const [savingGoal, setSavingGoal] = useState(false);
   const [goalSavedJustNow, setGoalSavedJustNow] = useState(false);
   const [goalError, setGoalError] = useState('');
+
+  const [pixInput, setPixInput] = useState('');
+  const [savingPix, setSavingPix] = useState(false);
+  const [pixSavedJustNow, setPixSavedJustNow] = useState(false);
+  const [pixError, setPixError] = useState('');
 
   const [logoUploading, setLogoUploading] = useState(false);
   const [logoError, setLogoError] = useState('');
@@ -60,6 +65,10 @@ function ProfilePageContent() {
   useEffect(() => {
     setGoalInput(monthlyGoal > 0 ? String(monthlyGoal) : '');
   }, [monthlyGoal]);
+
+  useEffect(() => {
+    setPixInput(pixKey);
+  }, [pixKey]);
 
   useEffect(() => {
     setProviders(user?.providerData.map((p) => p.providerId) ?? []);
@@ -105,6 +114,24 @@ function ProfilePageContent() {
       setGoalError('Não foi possível salvar. Tente novamente.');
     } finally {
       setSavingGoal(false);
+    }
+  }
+
+  async function handleSavePix(e: React.FormEvent) {
+    e.preventDefault();
+    if (!user) return;
+
+    setSavingPix(true);
+    setPixError('');
+
+    try {
+      await updateUserProfile(user.uid, { pixKey: pixInput.trim() });
+      setPixSavedJustNow(true);
+    } catch (err) {
+      console.error(err);
+      setPixError('Não foi possível salvar. Tente novamente.');
+    } finally {
+      setSavingPix(false);
     }
   }
 
@@ -346,6 +373,37 @@ function ProfilePageContent() {
             {monthlyGoal > 0
               ? `Meta atual: ${formatBRL(monthlyGoal)} por mês. Aparece na sidebar e no dashboard.`
               : 'Aparece na sidebar e no dashboard, com o quanto já foi faturado no mês.'}
+          </p>
+        </form>
+      </div>
+
+      {/* Chave Pix */}
+      <div className={cardClass}>
+        <form onSubmit={handleSavePix}>
+          <label className={labelClass}>Chave Pix</label>
+          <div className="flex max-w-md gap-2">
+            <input
+              type="text"
+              className={inputClass}
+              placeholder="CPF, e-mail, telefone ou chave aleatória"
+              value={pixInput}
+              onChange={(e) => {
+                setPixInput(e.target.value);
+                setPixSavedJustNow(false);
+              }}
+            />
+            <button
+              type="submit"
+              disabled={savingPix}
+              className="shrink-0 rounded-input bg-accent px-4 text-[13px] font-semibold text-white shadow-btn transition hover:opacity-90 disabled:opacity-60"
+            >
+              {savingPix ? 'Salvando...' : 'Salvar'}
+            </button>
+          </div>
+          {pixError && <p className="mt-2 text-[12px] text-negative">{pixError}</p>}
+          {pixSavedJustNow && <p className="mt-2 text-[12px] text-positive">Salvo.</p>}
+          <p className="mt-2 text-[12px] text-ink-4">
+            Gera um QR Code de pagamento nos orçamentos, com o valor já preenchido.
           </p>
         </form>
       </div>

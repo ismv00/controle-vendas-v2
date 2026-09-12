@@ -11,6 +11,7 @@ interface AuthContextData {
     companyName: string;
     logoUrl: string;
     monthlyGoal: number;
+    pixKey: string;
 }
 
 const AuthContext = createContext<AuthContextData>({
@@ -19,6 +20,7 @@ const AuthContext = createContext<AuthContextData>({
     companyName: '',
     logoUrl: '',
     monthlyGoal: 0,
+    pixKey: '',
 });
 
 export function AuthProvider({ children }: {
@@ -30,6 +32,7 @@ export function AuthProvider({ children }: {
     const [companyName, setCompanyName] = useState('');
     const [logoUrl, setLogoUrl] = useState('');
     const [monthlyGoal, setMonthlyGoal] = useState(0);
+    const [pixKey, setPixKey] = useState('');
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
@@ -47,6 +50,7 @@ export function AuthProvider({ children }: {
             setCompanyName(profile.companyName);
             setLogoUrl(profile.logoUrl);
             setMonthlyGoal(profile.monthlyGoal);
+            setPixKey(profile.pixKey);
         });
 
         return () => {
@@ -54,11 +58,12 @@ export function AuthProvider({ children }: {
             setCompanyName('');
             setLogoUrl('');
             setMonthlyGoal(0);
+            setPixKey('');
         };
     }, [user]);
 
     return (
-        <AuthContext.Provider value={{ user, loading, companyName, logoUrl, monthlyGoal }}>
+        <AuthContext.Provider value={{ user, loading, companyName, logoUrl, monthlyGoal, pixKey }}>
             {children}
         </AuthContext.Provider>
     )

@@ -2,12 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Printer } from 'lucide-react';
+import QRCode from 'qrcode';
+import { ArrowLeft, Printer, Copy, Check } from 'lucide-react';
 
 import { useAuth } from '@/src/contexts/AuthContext';
 import { getBudgetById } from '@/src/services/budgetService';
 import { Budget } from '@/src/types/Budget';
 import { formatBRL } from '@/src/lib/format';
+import { buildPixPayload } from '@/src/lib/pix';
 
 function formatControlNumber(n: number) {
   return `#${String(n).padStart(4, '0')}`;
@@ -16,10 +18,12 @@ function formatControlNumber(n: number) {
 export default function BudgetPrintPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
-  const { user, companyName, logoUrl } = useAuth();
+  const { user, companyName, logoUrl, pixKey } = useAuth();
 
   const [budget, setBudget] = useState<Budget | null>(null);
   const [notFound, setNotFound] = useState(false);
+  const [pixQrCode, setPixQrCode] = useState('');
+  const [pixCopied, setPixCopied] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -45,6 +49,50 @@ export default function BudgetPrintPage() {
       cancelled = true;
     };
   }, [params.id, user]);
+
+  const pixPayload =
+    budget && pixKey
+      ? buildPixPayload({
+          key: pixKey,
+          merchantName: companyName || user?.displayName || user?.email?.split('@')[0] || 'Usuário',
+          amount: budget.totalValue,
+          txid: `ORC${budget.controlNumber}`,
+        })
+      : '';
+
+  useEffect(() => {
+    if (!pixPayload) return;
+
+    let cancelled = false;
+
+    async function generateQr() {
+      try {
+        const url = await QRCode.toDataURL(pixPayload, { margin: 1, width: 220 });
+        if (!cancelled) setPixQrCode(url);
+      } catch {
+        if (!cancelled) setPixQrCode('');
+      }
+    }
+
+    void generateQr();
+
+    return () => {
+      cancelled = true;
+      setPixQrCode('');
+    };
+  }, [pixPayload]);
+
+  async function handleCopyPix() {
+    if (!pixPayload) return;
+
+    try {
+      await navigator.clipboard.writeText(pixPayload);
+      setPixCopied(true);
+      window.setTimeout(() => setPixCopied(false), 2000);
+    } catch {
+      // segue sem feedback se o navegador bloquear o acesso à área de transferência
+    }
+  }
 
   if (notFound) {
     return (
@@ -168,6 +216,38 @@ export default function BudgetPrintPage() {
             </span>
           </div>
         </div>
+
+        {/* Pix */}
+        {pixKey && (
+          <div className="mt-6 flex flex-col items-center gap-3 rounded-block border border-border-divider-2 bg-surface-subtle-2 p-5 print:break-inside-avoid">
+            <p className="text-[12.5px] font-semibold uppercase tracking-[.04em] text-ink-3">
+              Pagar via Pix
+            </p>
+
+            {pixQrCode ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={pixQrCode} alt="QR Code Pix" className="h-[180px] w-[180px]" />
+            ) : (
+              <div className="flex h-[180px] w-[180px] items-center justify-center rounded-block bg-white text-[11px] text-mute">
+                Gerando QR Code...
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={handleCopyPix}
+              className="flex items-center gap-1.5 rounded-input border border-[#dcd8d0] bg-white px-4 py-2 text-[12.5px] font-semibold text-ink transition hover:border-ink-4 print:hidden"
+            >
+              {pixCopied ? <Check size={14} /> : <Copy size={14} />}
+              {pixCopied ? 'Copiado!' : 'Copiar Pix copia e cola'}
+            </button>
+
+            <p className="text-center text-[11px] text-ink-4">
+              Escaneie o QR Code ou copie o código para pagar {formatBRL(budget.totalValue)} via
+              Pix.
+            </p>
+          </div>
+        )}
 
         {/* Observações */}
         <div className="mt-8 rounded-block border border-[#f0dcd9] bg-[#fbecea] p-4 text-[12.5px] leading-relaxed text-ink">
