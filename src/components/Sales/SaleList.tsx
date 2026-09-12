@@ -1,8 +1,9 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import Link from 'next/link';
 import { Sale } from '@/src/types/Sale';
-import { Pencil, Trash2 } from 'lucide-react';
+import { Pencil, Trash2, Printer } from 'lucide-react';
 import { Avatar } from '@/src/components/ui/Avatar';
 import { formatBRL } from '@/src/lib/format';
 
@@ -105,6 +106,15 @@ export function SaleList({ sales, onEdit, onDelete, onToggleStatus }: Props) {
 
                     <td className="px-4 py-3">
                       <div className="flex justify-end gap-2">
+                        <Link
+                          href={`/vendas/${sale.id}`}
+                          target="_blank"
+                          title="Imprimir / salvar PDF"
+                          className="flex h-7 w-7 items-center justify-center rounded-iconbtn border border-[#e6e3dc] text-ink-3 transition hover:border-[#dcd8d0]"
+                        >
+                          <Printer size={14} />
+                        </Link>
+
                         <button
                           onClick={() => onEdit(sale)}
                           title="Editar venda"

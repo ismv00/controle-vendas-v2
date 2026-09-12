@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Image as ImageIcon } from 'lucide-react';
+import { Image as ImageIcon, Download } from 'lucide-react';
 import { useAuth } from '@/src/contexts/AuthContext';
 import {
   linkGoogleToCurrentUser,
@@ -13,6 +13,7 @@ import {
   uploadCompanyLogo,
   removeCompanyLogo,
 } from '@/src/services/userProfileService';
+import { exportAllData } from '@/src/services/exportService';
 import { Avatar } from '@/src/components/ui/Avatar';
 import { DeleteAccountModal } from '@/src/components/Layout/DeleteAccountModal';
 import { formatBRL } from '@/src/lib/format';
@@ -44,6 +45,9 @@ export default function ProfilePage() {
   const [linkError, setLinkError] = useState('');
 
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState('');
 
   useEffect(() => {
     setCompanyInput(companyName);
@@ -164,6 +168,22 @@ export default function ProfilePage() {
       setLinkError('Não foi possível remover o login por senha.');
     } finally {
       setLinkLoading(false);
+    }
+  }
+
+  async function handleExport() {
+    if (!user) return;
+
+    setExporting(true);
+    setExportError('');
+
+    try {
+      await exportAllData(user.uid);
+    } catch (err) {
+      console.error(err);
+      setExportError('Não foi possível gerar o arquivo. Tente novamente.');
+    } finally {
+      setExporting(false);
     }
   }
 
@@ -346,6 +366,25 @@ export default function ProfilePage() {
         </div>
       </div>
 
+      {/* Exportar dados */}
+      <div className={cardClass}>
+        <label className={labelClass}>Exportar meus dados</label>
+        <p className="text-[12.5px] text-ink-3">
+          Baixa um .zip com clientes, produtos, tabela de preços, vendas e orçamentos em planilhas
+          (.csv), pra guardar uma cópia ou usar em outro lugar.
+        </p>
+        <button
+          type="button"
+          onClick={handleExport}
+          disabled={exporting}
+          className="mt-3 flex items-center gap-1.5 rounded-input border border-[#dcd8d0] bg-white px-4 py-2 text-[13px] font-semibold text-ink transition hover:border-ink-4 disabled:opacity-60"
+        >
+          <Download size={14} />
+          {exporting ? 'Gerando arquivo...' : 'Baixar meus dados (.zip)'}
+        </button>
+        {exportError && <p className="mt-2 text-[12px] text-negative">{exportError}</p>}
+      </div>
+
       {/* Zona de perigo */}
       <div className="rounded-card border border-negative-border bg-surface p-6">
         <label className="mb-1.5 block text-[13px] font-semibold text-negative">
@@ -354,6 +393,14 @@ export default function ProfilePage() {
         <p className="text-[12.5px] text-ink-3">
           Apaga permanentemente sua conta e todos os dados cadastrados. Não é possível desfazer.
         </p>
+        <button
+          type="button"
+          onClick={handleExport}
+          disabled={exporting}
+          className="mt-3 mr-2 rounded-input border border-[#dcd8d0] bg-white px-4 py-2 text-[13px] font-semibold text-ink transition hover:border-ink-4 disabled:opacity-60"
+        >
+          {exporting ? 'Gerando...' : 'Baixar meus dados antes'}
+        </button>
         <button
           type="button"
           onClick={() => setDeleteModalOpen(true)}

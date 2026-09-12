@@ -2,9 +2,12 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Download } from 'lucide-react';
 import { Modal } from '@/src/components/ui/Modal';
+import { useAuth } from '@/src/contexts/AuthContext';
 import { getCurrentUserProviders } from '@/src/services/authService';
 import { getFirebaseErrorCode } from '@/src/lib/firebaseError';
+import { exportAllData } from '@/src/services/exportService';
 import {
   deleteAccount,
   reauthenticateWithPassword,
@@ -23,12 +26,14 @@ const inputClass =
 
 export function DeleteAccountModal({ open, onClose }: Props) {
   const router = useRouter();
+  const { user } = useAuth();
 
   const [confirmText, setConfirmText] = useState('');
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState('');
   const [needsReauth, setNeedsReauth] = useState(false);
   const [password, setPassword] = useState('');
+  const [exporting, setExporting] = useState(false);
 
   const canDelete = confirmText.trim() === CONFIRM_WORD;
   const providers = getCurrentUserProviders();
@@ -47,6 +52,22 @@ export function DeleteAccountModal({ open, onClose }: Props) {
   async function finishDeletion() {
     await deleteAccount();
     router.replace('/login');
+  }
+
+  async function handleExport() {
+    if (!user) return;
+
+    setExporting(true);
+    setError('');
+
+    try {
+      await exportAllData(user.uid);
+    } catch (err) {
+      console.error(err);
+      setError('Não foi possível gerar o arquivo. Tente novamente.');
+    } finally {
+      setExporting(false);
+    }
   }
 
   async function handleDelete() {
@@ -112,8 +133,20 @@ export function DeleteAccountModal({ open, onClose }: Props) {
       {!needsReauth ? (
         <div className="space-y-4">
           <div className="rounded-block border border-negative-border bg-negative-bg p-4 text-[12.5px] leading-relaxed text-negative">
-            Isso vai apagar permanentemente sua conta e todos os dados: clientes, produtos, tabela
-            de preços, vendas, orçamentos e a logo da empresa. Não é possível recuperar depois.
+            <p>
+              Isso vai apagar permanentemente sua conta e todos os dados: clientes, produtos,
+              tabela de preços, vendas, orçamentos e a logo da empresa. Não é possível recuperar
+              depois.
+            </p>
+            <button
+              type="button"
+              onClick={handleExport}
+              disabled={exporting}
+              className="mt-2.5 flex items-center gap-1.5 text-[12.5px] font-semibold text-negative underline transition hover:opacity-80 disabled:opacity-60"
+            >
+              <Download size={13} />
+              {exporting ? 'Gerando arquivo...' : 'Baixar uma cópia dos meus dados antes'}
+            </button>
           </div>
 
           <div>

@@ -20,8 +20,8 @@ export function LayoutWrapper({ children }: Props) {
   const authPages = ['/login', '/register', '/forgot-password'];
   const isAuthPage = authPages.includes(pathname);
 
-  // Página de impressão de orçamento: exige login, mas não mostra o menu (é pra ser impressa limpa).
-  const isBarePage = /^\/orcamentos\/[^/]+$/.test(pathname);
+  // Páginas de impressão (orçamento/recibo): exigem login, mas não mostram o menu (são pra imprimir limpas).
+  const isBarePage = /^\/(orcamentos|vendas)\/[^/]+$/.test(pathname);
 
   if (pathname !== lastPathname) {
     setLastPathname(pathname);

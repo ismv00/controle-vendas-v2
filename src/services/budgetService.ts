@@ -9,32 +9,18 @@ import {
   deleteDoc,
   doc,
   updateDoc,
-  runTransaction,
 } from 'firebase/firestore';
 
 import { db } from '../lib/firebase';
+import { getNextSequenceNumber } from '../lib/sequence';
 import { Budget } from '../types/Budget';
 
 const COLLECTION = 'budgets';
-const COUNTERS_COLLECTION = 'counters';
-
-async function getNextControlNumber(userId: string): Promise<number> {
-  const counterRef = doc(db, COUNTERS_COLLECTION, userId);
-
-  return runTransaction(db, async (transaction) => {
-    const snap = await transaction.get(counterRef);
-    const next = (snap.data()?.nextBudgetNumber ?? 1) as number;
-
-    transaction.set(counterRef, { nextBudgetNumber: next + 1 }, { merge: true });
-
-    return next;
-  });
-}
 
 export async function createBudget(
   budget: Omit<Budget, 'id' | 'createdAt' | 'controlNumber' | 'convertedSaleId'>
 ): Promise<string> {
-  const controlNumber = await getNextControlNumber(budget.userId);
+  const controlNumber = await getNextSequenceNumber(budget.userId, 'nextBudgetNumber');
 
   const payload = {
     ...budget,

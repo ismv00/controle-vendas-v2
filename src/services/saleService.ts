@@ -1,6 +1,7 @@
 import {
   collection,
   addDoc,
+  getDoc,
   getDocs,
   query,
   where,
@@ -11,19 +12,73 @@ import {
 } from 'firebase/firestore';
 
 import { db } from '../lib/firebase';
+import { getNextSequenceNumber } from '../lib/sequence';
 import { Sale, SaleItem } from '../types/Sale';
 
 const COLLECTION = 'sales';
 
 // CREATE
-export async function createSale(sale: Omit<Sale, 'id' | 'createdAt'>): Promise<string> {
+export async function createSale(sale: Omit<Sale, 'id' | 'createdAt' | 'receiptNumber'>): Promise<string> {
+  const receiptNumber = await getNextSequenceNumber(sale.userId, 'nextSaleNumber');
+
   const payload = {
     ...sale,
+    receiptNumber,
     createdAt: new Date(),
   };
 
   const docRef = await addDoc(collection(db, COLLECTION), payload);
   return docRef.id;
+}
+
+function mapSale(id: string, data: Record<string, unknown>): Sale {
+  const rawItems = (data.items as Record<string, unknown>[]) ?? [];
+
+  const items: SaleItem[] = rawItems.map((item) => {
+    const baseCost =
+      typeof item.baseCost === 'number'
+        ? item.baseCost
+        : typeof item.cost === 'number'
+        ? item.cost
+        : 0;
+
+    return {
+      ...item,
+      baseCost,
+    } as SaleItem;
+  });
+
+  const totalCost =
+    typeof data.totalCost === 'number'
+      ? data.totalCost
+      : items.reduce((sum, item) => sum + item.baseCost * (item.quantity ?? 1), 0);
+
+  const totalValue = typeof data.totalValue === 'number' ? data.totalValue : 0;
+
+  const totalProfit =
+    typeof data.totalProfit === 'number' ? data.totalProfit : totalValue - totalCost;
+
+  const createdAt = data.createdAt as { toDate?: () => Date } | undefined;
+
+  return {
+    id,
+    userId: data.userId as string,
+
+    clientId: data.clientId as string,
+    clientName: data.clientName as string,
+
+    items,
+
+    totalItems: (data.totalItems as number) ?? items.length,
+    totalValue,
+    totalCost,
+    totalProfit,
+
+    status: data.status === 'pending' ? 'pending' : 'paid',
+    receiptNumber: typeof data.receiptNumber === 'number' ? data.receiptNumber : undefined,
+
+    createdAt: createdAt?.toDate?.() ?? new Date(),
+  };
 }
 
 // GET BY USER
@@ -36,52 +91,15 @@ export async function getSalesByUser(userId: string): Promise<Sale[]> {
 
   const snapshot = await getDocs(q);
 
-  return snapshot.docs.map((docSnap) => {
-    const data = docSnap.data();
+  return snapshot.docs.map((docSnap) => mapSale(docSnap.id, docSnap.data()));
+}
 
-    const items: SaleItem[] = (data.items ?? []).map((item: Record<string, unknown>) => {
-      const baseCost =
-        typeof item.baseCost === 'number'
-          ? item.baseCost
-          : typeof item.cost === 'number'
-          ? item.cost
-          : 0;
+// GET ONE
+export async function getSaleById(id: string): Promise<Sale | null> {
+  const snap = await getDoc(doc(db, COLLECTION, id));
+  if (!snap.exists()) return null;
 
-      return {
-        ...item,
-        baseCost,
-      } as SaleItem;
-    });
-
-    const totalCost =
-      typeof data.totalCost === 'number'
-        ? data.totalCost
-        : items.reduce((sum, item) => sum + item.baseCost * (item.quantity ?? 1), 0);
-
-    const totalValue = typeof data.totalValue === 'number' ? data.totalValue : 0;
-
-    const totalProfit =
-      typeof data.totalProfit === 'number' ? data.totalProfit : totalValue - totalCost;
-
-    return {
-      id: docSnap.id,
-      userId: data.userId,
-
-      clientId: data.clientId,
-      clientName: data.clientName,
-
-      items,
-
-      totalItems: data.totalItems ?? items.length,
-      totalValue,
-      totalCost,
-      totalProfit,
-
-      status: data.status === 'pending' ? 'pending' : 'paid',
-
-      createdAt: data.createdAt?.toDate?.() ?? new Date(),
-    };
-  });
+  return mapSale(snap.id, snap.data());
 }
 
 // UPDATE
