@@ -20,6 +20,9 @@ export function LayoutWrapper({ children }: Props) {
   const authPages = ['/login', '/register', '/forgot-password'];
   const isAuthPage = authPages.includes(pathname);
 
+  // Página de impressão de orçamento: exige login, mas não mostra o menu (é pra ser impressa limpa).
+  const isBarePage = /^\/orcamentos\/[^/]+$/.test(pathname);
+
   if (pathname !== lastPathname) {
     setLastPathname(pathname);
     setMobileNavOpen(false);
@@ -40,6 +43,10 @@ export function LayoutWrapper({ children }: Props) {
         Carregando...
       </main>
     );
+  }
+
+  if (isBarePage) {
+    return <main className="min-h-screen bg-appbg">{children}</main>;
   }
 
   return (

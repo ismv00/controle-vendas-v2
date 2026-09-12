@@ -16,13 +16,14 @@ import { Sale, SaleItem } from '../types/Sale';
 const COLLECTION = 'sales';
 
 // CREATE
-export async function createSale(sale: Omit<Sale, 'id' | 'createdAt'>) {
+export async function createSale(sale: Omit<Sale, 'id' | 'createdAt'>): Promise<string> {
   const payload = {
     ...sale,
     createdAt: new Date(),
   };
 
-  await addDoc(collection(db, COLLECTION), payload);
+  const docRef = await addDoc(collection(db, COLLECTION), payload);
+  return docRef.id;
 }
 
 // GET BY USER

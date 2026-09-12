@@ -26,6 +26,7 @@ import {
 import { formatBRL } from '@/src/lib/format';
 import { TrendChart } from './TrendChart';
 import { TopProducts } from './TopProducts';
+import { TopClients } from './TopClients';
 import { RecentSales } from './RecentSales';
 import { KpiCard } from './KpiCard';
 
@@ -119,7 +120,7 @@ function buildTrendBuckets(sales: Sale[], range: PeriodRange) {
 }
 
 export function Dashboard() {
-  const { user, companyName } = useAuth();
+  const { user, companyName, monthlyGoal } = useAuth();
 
   const [period, setPeriod] = useState<Period>('month');
   const [customStart, setCustomStart] = useState('');
@@ -226,7 +227,21 @@ export function Dashboard() {
       .sort((a, b) => b.quantity - a.quantity)
       .slice(0, 4);
 
-    const recentSales = current.slice(0, 5);
+    const clientTotals = new Map<string, { total: number; purchases: number }>();
+    current.forEach((sale) => {
+      const prev = clientTotals.get(sale.clientName) ?? { total: 0, purchases: 0 };
+      clientTotals.set(sale.clientName, {
+        total: prev.total + sale.totalValue,
+        purchases: prev.purchases + 1,
+      });
+    });
+
+    const topClients = Array.from(clientTotals.entries())
+      .map(([name, { total, purchases }]) => ({ name, total, purchases }))
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 5);
+
+    const recentSales = current.slice(0, 10);
 
     return {
       revenue,
@@ -242,6 +257,7 @@ export function Dashboard() {
       last7Days,
       trendBuckets,
       topProducts,
+      topClients,
       recentSales,
     };
   }, [sales, clients, products, prices, period, isCustom, customStart, customEnd]);
@@ -250,6 +266,9 @@ export function Dashboard() {
   const firstName = displayName.split(/[\s.]/)[0];
   const monthLabel = new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
   const heroMoney = formatMoneyParts(stats.revenue);
+
+  const showGoal = !isCustom && period === 'month' && monthlyGoal > 0;
+  const goalPercent = showGoal ? Math.min(100, Math.round((stats.revenue / monthlyGoal) * 100)) : 0;
 
   const eyebrowLabel = isCustom ? 'FATURAMENTO NO PERÍODO' : EYEBROW_LABEL[period];
   const previousLabel = isCustom ? 'vs. período anterior' : PREVIOUS_LABEL[period];
@@ -362,6 +381,23 @@ export function Dashboard() {
                 Margem <span className="font-mono font-semibold text-white">{stats.margin.toFixed(1)}%</span>
               </p>
 
+              {showGoal && (
+                <div className="mt-4">
+                  <div className="flex items-center justify-between text-[11px] text-white/50">
+                    <span>Meta do mês</span>
+                    <span className="font-mono text-white/70">
+                      {goalPercent}% de {formatBRL(monthlyGoal)}
+                    </span>
+                  </div>
+                  <div className="mt-1.5 h-[5px] w-full overflow-hidden rounded-pill bg-white/10">
+                    <div
+                      className="h-full rounded-pill bg-positive-soft"
+                      style={{ width: `${goalPercent}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+
               <div className="mt-5">
                 <TrendChart buckets={stats.trendBuckets} />
               </div>
@@ -402,9 +438,16 @@ export function Dashboard() {
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.4fr_1fr]">
             <RecentSales sales={stats.recentSales} />
 
-            <div className="rounded-card border border-border-divider-2 bg-surface p-5">
-              <h2 className="mb-4 text-[14px] font-semibold text-ink">Produtos mais vendidos</h2>
-              <TopProducts rows={stats.topProducts} />
+            <div className="flex flex-col gap-4">
+              <div className="rounded-card border border-border-divider-2 bg-surface p-5">
+                <h2 className="mb-4 text-[14px] font-semibold text-ink">Produtos mais vendidos</h2>
+                <TopProducts rows={stats.topProducts} />
+              </div>
+
+              <div className="rounded-card border border-border-divider-2 bg-surface p-5">
+                <h2 className="mb-4 text-[14px] font-semibold text-ink">Maiores clientes</h2>
+                <TopClients rows={stats.topClients} />
+              </div>
             </div>
           </div>
         </>

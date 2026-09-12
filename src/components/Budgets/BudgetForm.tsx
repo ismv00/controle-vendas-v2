@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import { X } from 'lucide-react';
 import { Client } from '@/src/types/Client';
 import { Product } from '@/src/types/Product';
-import { Sale, SaleItem } from '@/src/types/Sale';
+import { Budget, BudgetItem } from '@/src/types/Budget';
 import { ProductPrice } from '@/src/types/ProductPrice';
 import { formatBRL } from '@/src/lib/format';
 
@@ -13,57 +13,51 @@ interface Props {
   products: Product[];
   prices: ProductPrice[];
   onSubmit: (data: {
-    clientId: string;
+    clientId: string | null;
     clientName: string;
-    items: SaleItem[];
+    clientPhone: string;
+    items: BudgetItem[];
     totalItems: number;
     totalValue: number;
-    totalProfit: number;
   }) => void | Promise<void>;
   onCancel: () => void;
-  initialData?: Sale | null;
+  initialData?: Budget | null;
 }
 
 const inputClass =
   'w-full rounded-input border border-border-input bg-surface-subtle-2 px-3 py-2.5 text-[13px] text-ink placeholder:text-placeholder focus:outline-none focus:border-accent';
 const labelClass = 'mb-1.5 block text-[12px] font-semibold text-ink-2';
 
-export function SaleForm({ clients, products, prices, onSubmit, onCancel, initialData }: Props) {
+export function BudgetForm({ clients, products, prices, onSubmit, onCancel, initialData }: Props) {
   const [clientId, setClientId] = useState(initialData?.clientId ?? '');
-  const [items, setItems] = useState<SaleItem[]>(initialData?.items ?? []);
+  const [clientName, setClientName] = useState(initialData?.clientName ?? '');
+  const [clientPhone, setClientPhone] = useState(initialData?.clientPhone ?? '');
+  const [items, setItems] = useState<BudgetItem[]>(initialData?.items ?? []);
   const [pendingProductId, setPendingProductId] = useState('');
   const [pendingQty, setPendingQty] = useState(1);
+
+  function handleSelectClient(id: string) {
+    setClientId(id);
+
+    const client = clients.find((c) => c.id === id);
+    if (client) {
+      setClientName(client.name);
+      setClientPhone(client.phone);
+    }
+  }
 
   function handleAddProduct(product: Product, quantity: number) {
     const exists = items.find((i) => i.productId === product.id);
     if (exists) return;
 
     const productPrice = prices.find((p) => p.productId === product.id);
-
-    if (!productPrice) {
-      alert('Este produto não possui preço de venda cadastrado.');
-      return;
-    }
-
-    const basePrice = Number(productPrice.salePrice.toFixed(2));
-    const baseCost = Number(productPrice.baseCost.toFixed(2));
+    const unitPrice = productPrice ? Number(productPrice.salePrice.toFixed(2)) : 0;
     const qty = Math.max(1, quantity);
-    const subtotal = Number((basePrice * qty).toFixed(2));
-    const profit = Number((subtotal - baseCost * qty).toFixed(2));
+    const subtotal = Number((unitPrice * qty).toFixed(2));
 
     setItems((prev) => [
       ...prev,
-      {
-        productId: product.id,
-        productName: product.name,
-        baseCost,
-        basePrice,
-        price: basePrice,
-        discountPercent: 0,
-        quantity: qty,
-        subtotal,
-        profit,
-      },
+      { productId: product.id, productName: product.name, quantity: qty, unitPrice, subtotal },
     ]);
   }
 
@@ -71,24 +65,19 @@ export function SaleForm({ clients, products, prices, onSubmit, onCancel, initia
     setItems((prev) =>
       prev.map((item, i) => {
         if (i !== index) return item;
-        const subtotal = Number((item.price * quantity).toFixed(2));
-        const profit = Number((subtotal - item.baseCost * quantity).toFixed(2));
-        return { ...item, quantity, subtotal, profit };
+        const subtotal = Number((item.unitPrice * quantity).toFixed(2));
+        return { ...item, quantity, subtotal };
       })
     );
   }
 
-  function updatePrice(index: number, price: number) {
+  function updateUnitPrice(index: number, unitPrice: number) {
     setItems((prev) =>
       prev.map((item, i) => {
         if (i !== index) return item;
-
-        const percent = item.basePrice > 0 ? ((price - item.basePrice) / item.basePrice) * 100 : 0;
-        const finalPrice = Number(price.toFixed(2));
+        const finalPrice = Number(unitPrice.toFixed(2));
         const subtotal = Number((finalPrice * item.quantity).toFixed(2));
-        const profit = Number((subtotal - item.baseCost * item.quantity).toFixed(2));
-
-        return { ...item, price: finalPrice, discountPercent: Number(percent.toFixed(2)), subtotal, profit };
+        return { ...item, unitPrice: finalPrice, subtotal };
       })
     );
   }
@@ -100,47 +89,39 @@ export function SaleForm({ clients, products, prices, onSubmit, onCancel, initia
   const totals = useMemo(() => {
     const totalItems = items.reduce((sum, i) => sum + i.quantity, 0);
     const totalValue = items.reduce((sum, i) => sum + i.subtotal, 0);
-    const totalCost = items.reduce((sum, i) => sum + i.baseCost * i.quantity, 0);
-    const totalProfit = totalValue - totalCost;
-    const margin = totalValue > 0 ? (totalProfit / totalValue) * 100 : 0;
-
-    return { totalItems, totalValue, totalCost, totalProfit, margin };
+    return { totalItems, totalValue };
   }, [items]);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
-    if (!clientId || items.length === 0) {
-      alert('Selecione um cliente e ao menos um produto.');
+    if (!clientName.trim() || !clientPhone.trim() || items.length === 0) {
+      alert('Informe o nome e telefone do cliente e ao menos um produto.');
       return;
     }
 
-    const client = clients.find((c) => c.id === clientId);
-    if (!client) return;
-
     onSubmit({
-      clientId,
-      clientName: client.name,
+      clientId: clientId || null,
+      clientName: clientName.trim(),
+      clientPhone: clientPhone.trim(),
       items,
       totalItems: totals.totalItems,
       totalValue: totals.totalValue,
-      totalProfit: totals.totalProfit,
     });
   }
 
   return (
     <form onSubmit={handleSubmit}>
       <div className="space-y-4">
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_140px]">
+        {clients.length > 0 && (
           <div>
-            <label className={labelClass}>Cliente</label>
+            <label className={labelClass}>Cliente cadastrado (opcional)</label>
             <select
               className={inputClass}
               value={clientId}
-              onChange={(e) => setClientId(e.target.value)}
-              required
+              onChange={(e) => handleSelectClient(e.target.value)}
             >
-              <option value="">Selecione um cliente</option>
+              <option value="">Digitar manualmente...</option>
               {clients.map((client) => (
                 <option key={client.id} value={client.id}>
                   {client.name}
@@ -148,13 +129,34 @@ export function SaleForm({ clients, products, prices, onSubmit, onCancel, initia
               ))}
             </select>
           </div>
+        )}
+
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_140px]">
+          <div>
+            <label className={labelClass}>Nome do cliente</label>
+            <input
+              type="text"
+              className={inputClass}
+              value={clientName}
+              onChange={(e) => {
+                setClientName(e.target.value);
+                setClientId('');
+              }}
+              required
+            />
+          </div>
 
           <div>
-            <label className={labelClass}>Data</label>
+            <label className={labelClass}>Telefone</label>
             <input
-              className={`${inputClass} font-mono`}
-              value={(initialData?.createdAt ?? new Date()).toLocaleDateString('pt-BR')}
-              disabled
+              type="text"
+              className={inputClass}
+              value={clientPhone}
+              onChange={(e) => {
+                setClientPhone(e.target.value);
+                setClientId('');
+              }}
+              required
             />
           </div>
         </div>
@@ -228,21 +230,16 @@ export function SaleForm({ clients, products, prices, onSubmit, onCancel, initia
                       type="number"
                       step="0.01"
                       min={0}
-                      value={item.price}
-                      onChange={(e) => updatePrice(index, Math.max(0, Number(e.target.value)))}
+                      value={item.unitPrice}
+                      onChange={(e) => updateUnitPrice(index, Math.max(0, Number(e.target.value)))}
                       className="w-20 rounded border border-border-input bg-surface-subtle-2 px-1.5 py-0.5 text-[12px] font-mono"
                     />
                   </p>
                 </div>
 
-                <div className="shrink-0 text-right">
-                  <p className="font-mono text-[13px] font-semibold text-ink">
-                    {formatBRL(item.subtotal)}
-                  </p>
-                  <p className="font-mono text-[11.5px] font-medium text-positive">
-                    {formatBRL(item.profit)}
-                  </p>
-                </div>
+                <p className="shrink-0 font-mono text-[13px] font-semibold text-ink">
+                  {formatBRL(item.subtotal)}
+                </p>
 
                 <button
                   type="button"
@@ -257,24 +254,11 @@ export function SaleForm({ clients, products, prices, onSubmit, onCancel, initia
         )}
 
         <div className="flex items-center justify-between rounded-block bg-surface-subtle-2 px-4 py-3 text-[12.5px]">
-          <div className="flex gap-5">
-            <span className="text-ink-3">
-              Itens <span className="font-mono font-semibold text-ink">{totals.totalItems}</span>
-            </span>
-            <span className="text-ink-3">
-              Total{' '}
-              <span className="font-mono font-semibold text-ink">{formatBRL(totals.totalValue)}</span>
-            </span>
-            <span className="text-ink-3">
-              Lucro{' '}
-              <span className="font-mono font-semibold text-positive">
-                {formatBRL(totals.totalProfit)}
-              </span>
-            </span>
-          </div>
-
           <span className="text-ink-3">
-            Margem <span className="font-mono font-semibold text-ink">{totals.margin.toFixed(1)}%</span>
+            Itens <span className="font-mono font-semibold text-ink">{totals.totalItems}</span>
+          </span>
+          <span className="text-ink-3">
+            Total <span className="font-mono font-semibold text-ink">{formatBRL(totals.totalValue)}</span>
           </span>
         </div>
       </div>
@@ -291,7 +275,7 @@ export function SaleForm({ clients, products, prices, onSubmit, onCancel, initia
           type="submit"
           className="rounded-input bg-accent px-5 py-2 text-[13px] font-semibold text-white shadow-btn transition hover:opacity-90"
         >
-          Salvar venda
+          Salvar orçamento
         </button>
       </div>
     </form>

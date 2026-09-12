@@ -1,6 +1,7 @@
 'use client';
 
-import { ReactNode } from 'react';
+import { ReactNode, useSyncExternalStore } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 
 type ModalProps = {
@@ -12,10 +13,25 @@ type ModalProps = {
   children: ReactNode;
 };
 
-export function Modal({ open, title, subtitle, maxWidth = 560, onClose, children }: ModalProps) {
-  if (!open) return null;
+const noopSubscribe = () => () => {};
 
-  return (
+// document.body só existe no cliente — evita mismatch de hidratação sem setState em efeito.
+function useIsClient() {
+  return useSyncExternalStore(
+    noopSubscribe,
+    () => true,
+    () => false
+  );
+}
+
+export function Modal({ open, title, subtitle, maxWidth = 560, onClose, children }: ModalProps) {
+  const isClient = useIsClient();
+
+  if (!open || !isClient) return null;
+
+  // Renderizado via portal direto no <body>: assim o modal (position: fixed) nunca fica
+  // preso dentro do elemento animado do PageTransition (transform ali quebraria o fixed).
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-6"
       style={{ background: 'rgba(20,19,17,.42)', backdropFilter: 'blur(3px)' }}
@@ -44,6 +60,7 @@ export function Modal({ open, title, subtitle, maxWidth = 560, onClose, children
 
         <div className="overflow-y-auto px-6 py-5">{children}</div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
