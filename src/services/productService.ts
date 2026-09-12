@@ -1,12 +1,14 @@
 import {
   collection,
   addDoc,
+  getDoc,
   getDocs,
   query,
   where,
   deleteDoc,
   doc,
   updateDoc,
+  increment,
 } from 'firebase/firestore';
 
 import { db } from '@/src/lib/firebase';
@@ -33,6 +35,8 @@ export async function getProductsByUser(userId: string): Promise<Product[]> {
       name: data.name ?? data.nome,
       category: data.category ?? data.categoria,
       cost: Number(data.cost ?? data.custo ?? 0),
+      trackStock: Boolean(data.trackStock),
+      stockQuantity: Number(data.stockQuantity ?? 0),
 
       userId: data.userId,
       createdAt: data.createdAt?.toDate?.() ?? data.migratedAt?.toDate?.() ?? new Date(),
@@ -52,10 +56,30 @@ export async function updateProduct(id: string, data: Partial<Omit<Product, 'id'
   if (data.name !== undefined) payload.name = data.name;
   if (data.category !== undefined) payload.category = data.category;
   if (data.cost !== undefined) payload.cost = data.cost;
+  if (data.trackStock !== undefined) payload.trackStock = data.trackStock;
+  if (data.stockQuantity !== undefined) payload.stockQuantity = data.stockQuantity;
 
   await updateDoc(doc(db, COLLECTION, id), payload);
 }
 
 export async function getAllProducts(userId: string): Promise<Product[]> {
   return getProductsByUser(userId);
+}
+
+// Ajusta o estoque de um produto (delta positivo repõe, negativo consome) — só tem efeito
+// se o produto tiver o controle de estoque ativado, senão é ignorado silenciosamente.
+export async function adjustStock(productId: string, delta: number) {
+  const ref = doc(db, COLLECTION, productId);
+  const snap = await getDoc(ref);
+
+  if (!snap.exists() || !snap.data().trackStock) return;
+
+  await updateDoc(ref, { stockQuantity: increment(delta) });
+}
+
+export async function adjustStockForItems(
+  items: { productId: string; quantity: number }[],
+  sign: 1 | -1
+) {
+  await Promise.all(items.map((item) => adjustStock(item.productId, sign * item.quantity)));
 }

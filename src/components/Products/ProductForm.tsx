@@ -15,6 +15,8 @@ export type ProductFormData = {
   operationalExpensePercent: number;
   marginPercent: number;
   salePrice: number;
+  trackStock: boolean;
+  stockQuantity: number;
 };
 
 type Props = {
@@ -38,6 +40,11 @@ export function ProductForm({ onSubmit, onCancel, initialData, initialPrice }: P
     String(initialPrice?.operationalExpensePercent ?? 0)
   );
   const [marginPercent, setMarginPercent] = useState(String(initialPrice?.marginPercent ?? 0));
+
+  const [trackStock, setTrackStock] = useState(initialData?.trackStock ?? false);
+  const [stockQuantity, setStockQuantity] = useState(
+    initialData?.stockQuantity !== undefined ? String(initialData.stockQuantity) : '0'
+  );
 
   const [categories, setCategories] = useState<string[]>(
     initialData?.category ? [initialData.category] : []
@@ -113,6 +120,8 @@ export function ProductForm({ onSubmit, onCancel, initialData, initialPrice }: P
       operationalExpensePercent: expenseNumber,
       marginPercent: marginNumber,
       salePrice,
+      trackStock,
+      stockQuantity: Math.max(0, Number(stockQuantity) || 0),
     });
   }
 
@@ -206,6 +215,36 @@ export function ProductForm({ onSubmit, onCancel, initialData, initialPrice }: P
           <p className="mt-1 font-mono text-[18px] font-semibold text-[#14663f]">
             {formatBRL(salePrice)}
           </p>
+        </div>
+
+        <div className="rounded-block border border-border-input bg-surface-subtle-2 px-4 py-3">
+          <label className="flex items-center gap-2 text-[13px] font-semibold text-ink-2">
+            <input
+              type="checkbox"
+              checked={trackStock}
+              onChange={(e) => setTrackStock(e.target.checked)}
+              className="h-4 w-4 rounded border-border-input accent-accent"
+            />
+            Controlar estoque deste produto
+          </label>
+          <p className="mt-1 text-[11.5px] text-ink-4">
+            Ative para produtos prontos que você revende. Deixe desativado para itens feitos sob
+            encomenda, sem estoque de produto acabado.
+          </p>
+
+          {trackStock && (
+            <div className="mt-3 max-w-[160px]">
+              <label className={labelClass}>Quantidade em estoque</label>
+              <input
+                type="number"
+                min={0}
+                step="1"
+                className={inputClass}
+                value={stockQuantity}
+                onChange={(e) => setStockQuantity(e.target.value)}
+              />
+            </div>
+          )}
         </div>
       </div>
 

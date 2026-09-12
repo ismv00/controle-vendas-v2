@@ -14,6 +14,7 @@ interface Props {
 }
 
 const MARGIN_THRESHOLD = 60;
+const LOW_STOCK_THRESHOLD = 5;
 
 export function ProductList({ products, prices, onEdit, onDelete }: Props) {
   const [filter, setFilter] = useState('');
@@ -112,6 +113,25 @@ export function ProductList({ products, prices, onEdit, onDelete }: Props) {
                     </p>
                   </div>
                 </div>
+
+                {product.trackStock && (
+                  <div className="mt-3 flex items-center justify-between border-t border-border-divider-2 pt-3">
+                    <span className="text-[10.5px] font-semibold uppercase tracking-[.06em] text-ink-4">
+                      Estoque
+                    </span>
+                    <span
+                      className={`font-mono text-[13px] font-semibold ${
+                        (product.stockQuantity ?? 0) <= 0
+                          ? 'text-negative'
+                          : (product.stockQuantity ?? 0) <= LOW_STOCK_THRESHOLD
+                          ? 'text-warn-2'
+                          : 'text-ink'
+                      }`}
+                    >
+                      {(product.stockQuantity ?? 0) <= 0 ? 'Esgotado' : `${product.stockQuantity} un.`}
+                    </span>
+                  </div>
+                )}
 
                 <div className="mt-3 flex justify-end gap-2 border-t border-border-divider-2 pt-3">
                   <button

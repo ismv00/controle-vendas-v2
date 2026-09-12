@@ -14,6 +14,7 @@ import {
 
 import { db } from '../lib/firebase';
 import { getNextSequenceNumber } from '../lib/sequence';
+import { adjustStockForItems } from './productService';
 import { Sale, SaleItem, PaymentMethod } from '../types/Sale';
 
 const COLLECTION = 'sales';
@@ -30,6 +31,8 @@ export async function createSale(sale: Omit<Sale, 'id' | 'createdAt' | 'receiptN
   };
 
   const docRef = await addDoc(collection(db, COLLECTION), payload);
+  await adjustStockForItems(sale.items, -1);
+
   return docRef.id;
 }
 
@@ -113,6 +116,12 @@ export async function getSaleById(id: string): Promise<Sale | null> {
 
 // UPDATE
 export async function updateSale(id: string, data: Partial<Sale>) {
+  if (data.items) {
+    const previous = await getSaleById(id);
+    if (previous) await adjustStockForItems(previous.items, 1);
+    await adjustStockForItems(data.items, -1);
+  }
+
   await updateDoc(doc(db, COLLECTION, id), {
     ...data,
     updatedAt: new Date(),
@@ -121,7 +130,11 @@ export async function updateSale(id: string, data: Partial<Sale>) {
 
 // DELETE
 export async function deleteSale(id: string) {
+  const sale = await getSaleById(id);
+
   await deleteDoc(doc(db, COLLECTION, id));
+
+  if (sale) await adjustStockForItems(sale.items, 1);
 }
 
 // GET ALL

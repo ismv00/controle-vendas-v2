@@ -56,12 +56,16 @@ export default function ProductsPage() {
           name: data.name,
           category: data.category,
           cost: data.cost,
+          trackStock: data.trackStock,
+          stockQuantity: data.stockQuantity,
         });
       } else {
         productId = await createProduct({
           name: data.name,
           category: data.category,
           cost: data.cost,
+          trackStock: data.trackStock,
+          stockQuantity: data.stockQuantity,
           userId: user.uid,
           createdAt: new Date(),
         });

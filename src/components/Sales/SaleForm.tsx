@@ -38,6 +38,10 @@ export function SaleForm({ clients, products, prices, onSubmit, onCancel, initia
   const [pendingProductId, setPendingProductId] = useState('');
   const [pendingQty, setPendingQty] = useState(1);
 
+  const pendingProduct = products.find((p) => p.id === pendingProductId);
+  const pendingStockWarning =
+    !!pendingProduct?.trackStock && pendingQty > (pendingProduct.stockQuantity ?? 0);
+
   function handleAddProduct(product: Product, quantity: number) {
     const exists = items.find((i) => i.productId === product.id);
     if (exists) return;
@@ -191,6 +195,13 @@ export function SaleForm({ clients, products, prices, onSubmit, onCancel, initia
               <option value="">Selecione um produto</option>
               {products.map((product) => {
                 const price = prices.find((p) => p.productId === product.id);
+                const stockLabel = product.trackStock
+                  ? ` · ${
+                      (product.stockQuantity ?? 0) > 0
+                        ? `${product.stockQuantity} em estoque`
+                        : 'esgotado'
+                    }`
+                  : '';
                 return (
                   <option
                     key={product.id}
@@ -198,6 +209,7 @@ export function SaleForm({ clients, products, prices, onSubmit, onCancel, initia
                     disabled={items.some((i) => i.productId === product.id)}
                   >
                     {product.name} {price ? `— ${formatBRL(price.salePrice)}` : '(sem preço)'}
+                    {stockLabel}
                   </option>
                 );
               })}
@@ -229,6 +241,13 @@ export function SaleForm({ clients, products, prices, onSubmit, onCancel, initia
             Adicionar
           </button>
         </div>
+
+        {pendingStockWarning && (
+          <p className="-mt-2 text-[11px] font-medium text-warn-2">
+            Apenas {pendingProduct!.stockQuantity ?? 0} em estoque — a venda ainda pode ser
+            registrada, mas o estoque ficará negativo.
+          </p>
+        )}
 
         {items.length > 0 && (
           <div className="divide-y divide-border-row rounded-block border border-border-input">
