@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { Image as ImageIcon, Download } from 'lucide-react';
+import { Suspense, useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { Image as ImageIcon, Download, Sparkles, X } from 'lucide-react';
 import { useAuth } from '@/src/contexts/AuthContext';
 import {
   linkGoogleToCurrentUser,
@@ -23,8 +24,11 @@ const inputClass =
 const labelClass = 'mb-1.5 block text-[13px] font-semibold text-ink-2';
 const cardClass = 'rounded-card border border-border-divider-2 bg-surface p-6';
 
-export default function ProfilePage() {
+function ProfilePageContent() {
   const { user, companyName, logoUrl, monthlyGoal } = useAuth();
+  const searchParams = useSearchParams();
+
+  const [showOnboarding, setShowOnboarding] = useState(searchParams.get('onboarding') === 'true');
 
   const [companyInput, setCompanyInput] = useState('');
   const [savingCompany, setSavingCompany] = useState(false);
@@ -199,6 +203,26 @@ export default function ProfilePage() {
         <h1 className="text-[25px] font-bold tracking-[-.025em] text-ink">Perfil</h1>
         <p className="mt-1 text-[13.5px] text-ink-3">Dados da sua conta e da empresa.</p>
       </div>
+
+      {showOnboarding && (
+        <div className="flex items-start gap-3 rounded-card border border-accent/20 bg-accent-soft p-5">
+          <Sparkles size={18} className="mt-0.5 shrink-0 text-accent" />
+          <div className="min-w-0 flex-1">
+            <p className="text-[14px] font-semibold text-ink">Bem-vindo(a) ao Venda Fácil!</p>
+            <p className="mt-1 text-[13px] text-ink-3">
+              Para começar, configure o nome da sua empresa e a logo abaixo — elas aparecem no
+              menu lateral, no dashboard e nos orçamentos e recibos impressos.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowOnboarding(false)}
+            className="shrink-0 text-ink-4 transition hover:text-ink"
+          >
+            <X size={16} />
+          </button>
+        </div>
+      )}
 
       {/* Identidade */}
       <div className={cardClass}>
@@ -412,5 +436,13 @@ export default function ProfilePage() {
 
       <DeleteAccountModal open={deleteModalOpen} onClose={() => setDeleteModalOpen(false)} />
     </div>
+  );
+}
+
+export default function ProfilePage() {
+  return (
+    <Suspense fallback={<p className="text-[13px] text-mute">Carregando...</p>}>
+      <ProfilePageContent />
+    </Suspense>
   );
 }

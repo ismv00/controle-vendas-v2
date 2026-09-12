@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { loginWithEmail, loginWithGoogle } from '@/src/services/authService';
+import { loginWithEmail, loginWithGoogle, isNewSignup } from '@/src/services/authService';
 
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { AuthLayout } from '@/src/components/Layout/AuthLayout';
@@ -42,8 +42,8 @@ export default function LoginPage() {
     setError('');
 
     try {
-      await loginWithGoogle();
-      router.push('/');
+      const user = await loginWithGoogle();
+      router.push(isNewSignup(user) ? '/perfil?onboarding=true' : '/');
     } catch (err) {
       const code = getFirebaseErrorCode(err);
 

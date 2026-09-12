@@ -26,6 +26,9 @@ import { Product } from '@/src/types/Product';
 
 import { useAuth } from '@/src/contexts/AuthContext';
 
+// Limita a leitura/renderização da lista — o Dashboard e a exportação continuam com o histórico completo.
+const LIST_LIMIT = 200;
+
 function BudgetsPageContent() {
   const { user, loading: authLoading } = useAuth();
 
@@ -44,7 +47,7 @@ function BudgetsPageContent() {
     setLoading(true);
 
     const [budgetsData, clientsData, productsData, pricesData] = await Promise.all([
-      getBudgetsByUser(userId),
+      getBudgetsByUser(userId, { limit: LIST_LIMIT }),
       getClientsByUser(userId),
       getProductsByUser(userId),
       getProductPricesByUser(userId),
@@ -67,7 +70,7 @@ function BudgetsPageContent() {
       setLoading(true);
 
       const [budgetsData, clientsData, productsData, pricesData] = await Promise.all([
-        getBudgetsByUser(user!.uid),
+        getBudgetsByUser(user!.uid, { limit: LIST_LIMIT }),
         getClientsByUser(user!.uid),
         getProductsByUser(user!.uid),
         getProductPricesByUser(user!.uid),
@@ -198,7 +201,9 @@ function BudgetsPageContent() {
         <div>
           <h1 className="text-[25px] font-bold tracking-[-.025em] text-ink">Orçamentos</h1>
           <p className="mt-1 text-[13.5px] text-ink-3">
-            {budgets.length} orçamentos · {formatBRL(totalOpen)} em orçamentos
+            {budgets.length >= LIST_LIMIT ? `${budgets.length}+` : budgets.length} orçamentos ·{' '}
+            {formatBRL(totalOpen)} em orçamentos
+            {budgets.length >= LIST_LIMIT && ' · mostrando os mais recentes'}
           </p>
         </div>
 

@@ -1,5 +1,6 @@
 import JSZip from 'jszip';
 import { toCSV } from '../lib/csv';
+import { PAYMENT_METHOD_LABELS } from '../types/Sale';
 import { getClientsByUser } from './clientService';
 import { getProductsByUser } from './productService';
 import { getProductPricesByUser } from './priceService';
@@ -63,6 +64,11 @@ export async function exportAllData(userId: string) {
       { key: 'totalValue', label: 'Total', value: (s) => s.totalValue.toFixed(2) },
       { key: 'totalProfit', label: 'Lucro', value: (s) => s.totalProfit.toFixed(2) },
       { key: 'status', label: 'Status', value: (s) => (s.status === 'pending' ? 'Pendente' : 'Pago') },
+      {
+        key: 'paymentMethod',
+        label: 'Forma de pagamento',
+        value: (s) => (s.paymentMethod ? PAYMENT_METHOD_LABELS[s.paymentMethod] : ''),
+      },
     ])
   );
 

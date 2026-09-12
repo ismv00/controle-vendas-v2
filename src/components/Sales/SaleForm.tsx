@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import { X } from 'lucide-react';
 import { Client } from '@/src/types/Client';
 import { Product } from '@/src/types/Product';
-import { Sale, SaleItem } from '@/src/types/Sale';
+import { Sale, SaleItem, PaymentMethod, PAYMENT_METHOD_LABELS } from '@/src/types/Sale';
 import { ProductPrice } from '@/src/types/ProductPrice';
 import { formatBRL } from '@/src/lib/format';
 
@@ -19,6 +19,7 @@ interface Props {
     totalItems: number;
     totalValue: number;
     totalProfit: number;
+    paymentMethod?: PaymentMethod;
   }) => void | Promise<void>;
   onCancel: () => void;
   initialData?: Sale | null;
@@ -30,6 +31,9 @@ const labelClass = 'mb-1.5 block text-[12px] font-semibold text-ink-2';
 
 export function SaleForm({ clients, products, prices, onSubmit, onCancel, initialData }: Props) {
   const [clientId, setClientId] = useState(initialData?.clientId ?? '');
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | ''>(
+    initialData?.paymentMethod ?? ''
+  );
   const [items, setItems] = useState<SaleItem[]>(initialData?.items ?? []);
   const [pendingProductId, setPendingProductId] = useState('');
   const [pendingQty, setPendingQty] = useState(1);
@@ -125,6 +129,7 @@ export function SaleForm({ clients, products, prices, onSubmit, onCancel, initia
       totalItems: totals.totalItems,
       totalValue: totals.totalValue,
       totalProfit: totals.totalProfit,
+      paymentMethod: paymentMethod || undefined,
     });
   }
 
@@ -157,6 +162,22 @@ export function SaleForm({ clients, products, prices, onSubmit, onCancel, initia
               disabled
             />
           </div>
+        </div>
+
+        <div>
+          <label className={labelClass}>Forma de pagamento</label>
+          <select
+            className={`${inputClass} max-w-[220px]`}
+            value={paymentMethod}
+            onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod | '')}
+          >
+            <option value="">Não informado</option>
+            {Object.entries(PAYMENT_METHOD_LABELS).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div className="grid grid-cols-1 items-end gap-3 sm:grid-cols-[1fr_140px_auto]">

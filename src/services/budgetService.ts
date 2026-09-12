@@ -6,6 +6,7 @@ import {
   query,
   where,
   orderBy,
+  limit as fsLimit,
   deleteDoc,
   doc,
   updateDoc,
@@ -57,12 +58,14 @@ function mapBudget(id: string, data: Record<string, unknown>): Budget {
   };
 }
 
-export async function getBudgetsByUser(userId: string): Promise<Budget[]> {
-  const q = query(
-    collection(db, COLLECTION),
+export async function getBudgetsByUser(userId: string, options?: { limit?: number }): Promise<Budget[]> {
+  const constraints = [
     where('userId', '==', userId),
-    orderBy('createdAt', 'desc')
-  );
+    orderBy('createdAt', 'desc'),
+    ...(options?.limit ? [fsLimit(options.limit)] : []),
+  ];
+
+  const q = query(collection(db, COLLECTION), ...constraints);
 
   const snapshot = await getDocs(q);
 

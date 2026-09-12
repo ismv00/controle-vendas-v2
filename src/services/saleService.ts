@@ -6,6 +6,7 @@ import {
   query,
   where,
   orderBy,
+  limit as fsLimit,
   deleteDoc,
   doc,
   updateDoc,
@@ -13,9 +14,10 @@ import {
 
 import { db } from '../lib/firebase';
 import { getNextSequenceNumber } from '../lib/sequence';
-import { Sale, SaleItem } from '../types/Sale';
+import { Sale, SaleItem, PaymentMethod } from '../types/Sale';
 
 const COLLECTION = 'sales';
+const VALID_PAYMENT_METHODS: PaymentMethod[] = ['dinheiro', 'pix', 'cartao', 'outro'];
 
 // CREATE
 export async function createSale(sale: Omit<Sale, 'id' | 'createdAt' | 'receiptNumber'>): Promise<string> {
@@ -60,6 +62,10 @@ function mapSale(id: string, data: Record<string, unknown>): Sale {
 
   const createdAt = data.createdAt as { toDate?: () => Date } | undefined;
 
+  const paymentMethod = VALID_PAYMENT_METHODS.includes(data.paymentMethod as PaymentMethod)
+    ? (data.paymentMethod as PaymentMethod)
+    : undefined;
+
   return {
     id,
     userId: data.userId as string,
@@ -76,18 +82,21 @@ function mapSale(id: string, data: Record<string, unknown>): Sale {
 
     status: data.status === 'pending' ? 'pending' : 'paid',
     receiptNumber: typeof data.receiptNumber === 'number' ? data.receiptNumber : undefined,
+    paymentMethod,
 
     createdAt: createdAt?.toDate?.() ?? new Date(),
   };
 }
 
 // GET BY USER
-export async function getSalesByUser(userId: string): Promise<Sale[]> {
-  const q = query(
-    collection(db, COLLECTION),
+export async function getSalesByUser(userId: string, options?: { limit?: number }): Promise<Sale[]> {
+  const constraints = [
     where('userId', '==', userId),
-    orderBy('createdAt', 'desc')
-  );
+    orderBy('createdAt', 'desc'),
+    ...(options?.limit ? [fsLimit(options.limit)] : []),
+  ];
+
+  const q = query(collection(db, COLLECTION), ...constraints);
 
   const snapshot = await getDocs(q);
 

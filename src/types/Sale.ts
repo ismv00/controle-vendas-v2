@@ -26,6 +26,16 @@ export interface Sale {
 
   status?: 'paid' | 'pending';
   receiptNumber?: number;
+  paymentMethod?: PaymentMethod;
 
   createdAt: Date;
 }
+
+export type PaymentMethod = 'dinheiro' | 'pix' | 'cartao' | 'outro';
+
+export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
+  dinheiro: 'Dinheiro',
+  pix: 'Pix',
+  cartao: 'Cartão',
+  outro: 'Outro',
+};

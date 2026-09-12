@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { registerWithEmail, loginWithGoogle } from '@/src/services/authService';
+import { registerWithEmail, loginWithGoogle, isNewSignup } from '@/src/services/authService';
 
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { AuthLayout } from '@/src/components/Layout/AuthLayout';
@@ -37,7 +37,7 @@ export default function RegisterPage() {
     try {
       setLoading(true);
       await registerWithEmail(email, password);
-      router.push('/');
+      router.push('/perfil?onboarding=true');
     } catch {
       setError('Erro ao criar a conta.');
     } finally {
@@ -50,8 +50,8 @@ export default function RegisterPage() {
     setError('');
 
     try {
-      await loginWithGoogle();
-      router.push('/');
+      const user = await loginWithGoogle();
+      router.push(isNewSignup(user) ? '/perfil?onboarding=true' : '/');
     } catch (err) {
       const code = getFirebaseErrorCode(err);
 

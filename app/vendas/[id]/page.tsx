@@ -6,7 +6,7 @@ import { ArrowLeft, Printer } from 'lucide-react';
 
 import { useAuth } from '@/src/contexts/AuthContext';
 import { getSaleById } from '@/src/services/saleService';
-import { Sale } from '@/src/types/Sale';
+import { Sale, PAYMENT_METHOD_LABELS } from '@/src/types/Sale';
 import { formatBRL } from '@/src/lib/format';
 
 function formatReceiptNumber(n?: number) {
@@ -121,11 +121,19 @@ export default function SaleReceiptPage() {
           </div>
         </div>
 
-        {/* Cliente + status */}
-        <div className="mt-5 grid grid-cols-2 gap-4">
+        {/* Cliente + pagamento + status */}
+        <div className="mt-5 grid grid-cols-3 gap-4">
           <div>
             <p className="text-[10.5px] font-semibold uppercase tracking-[.06em] text-ink-4">Cliente</p>
             <p className="mt-1 text-[13.5px] font-semibold text-ink">{sale.clientName}</p>
+          </div>
+          <div>
+            <p className="text-[10.5px] font-semibold uppercase tracking-[.06em] text-ink-4">
+              Pagamento
+            </p>
+            <p className="mt-1 text-[13.5px] text-ink">
+              {sale.paymentMethod ? PAYMENT_METHOD_LABELS[sale.paymentMethod] : '-'}
+            </p>
           </div>
           <div>
             <p className="text-[10.5px] font-semibold uppercase tracking-[.06em] text-ink-4">Status</p>

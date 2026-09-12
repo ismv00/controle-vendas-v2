@@ -7,8 +7,15 @@ import {
   GoogleAuthProvider,
   signOut,
   sendPasswordResetEmail,
+  User,
 } from 'firebase/auth';
 import { auth } from '../lib/firebase';
+
+// Login com Google também serve pra criar conta na primeira vez — essa checagem
+// diferencia "acabou de criar" de "já tinha conta", pra decidir se manda pro onboarding.
+export function isNewSignup(user: User): boolean {
+  return user.metadata.creationTime === user.metadata.lastSignInTime;
+}
 
 const googleProvider = new GoogleAuthProvider();
 

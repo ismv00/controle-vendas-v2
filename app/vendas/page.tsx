@@ -13,11 +13,14 @@ import { getProductPricesByUser } from '@/src/services/priceService';
 import { ProductPrice } from '@/src/types/ProductPrice';
 import { formatBRL } from '@/src/lib/format';
 
-import { Sale, SaleItem } from '@/src/types/Sale';
+import { Sale, SaleItem, PaymentMethod } from '@/src/types/Sale';
 import { Client } from '@/src/types/Client';
 import { Product } from '@/src/types/Product';
 
 import { useAuth } from '@/src/contexts/AuthContext';
+
+// Limita a leitura/renderização da lista — o Dashboard e a exportação continuam com o histórico completo.
+const LIST_LIMIT = 200;
 
 function SalesPageContent() {
   const { user, loading: authLoading } = useAuth();
@@ -38,7 +41,7 @@ function SalesPageContent() {
     setLoading(true);
 
     const [salesData, clientsData, productsData, pricesData] = await Promise.all([
-      getSalesByUser(userId),
+      getSalesByUser(userId, { limit: LIST_LIMIT }),
       getClientsByUser(userId),
       getProductsByUser(userId),
       getProductPricesByUser(userId),
@@ -63,7 +66,7 @@ function SalesPageContent() {
       setLoading(true);
 
       const [salesData, clientsData, productsData, pricesData] = await Promise.all([
-        getSalesByUser(user.uid),
+        getSalesByUser(user.uid, { limit: LIST_LIMIT }),
         getClientsByUser(user.uid),
         getProductsByUser(user.uid),
         getProductPricesByUser(user.uid),
@@ -92,6 +95,7 @@ function SalesPageContent() {
     totalItems: number;
     totalValue: number;
     totalProfit: number;
+    paymentMethod?: PaymentMethod;
   }) {
     const totalCost = data.items.reduce((sum, item) => sum + item.baseCost * item.quantity, 0);
 
@@ -168,7 +172,9 @@ function SalesPageContent() {
         <div>
           <h1 className="text-[25px] font-bold tracking-[-.025em] text-ink">Vendas</h1>
           <p className="mt-1 text-[13.5px] text-ink-3">
-            {sales.length} vendas · ticket médio {formatBRL(summary.avgTicket)}
+            {sales.length >= LIST_LIMIT ? `${sales.length}+` : sales.length} vendas · ticket médio{' '}
+            {formatBRL(summary.avgTicket)}
+            {sales.length >= LIST_LIMIT && ' · mostrando as mais recentes'}
           </p>
         </div>
 

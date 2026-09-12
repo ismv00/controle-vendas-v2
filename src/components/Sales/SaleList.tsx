@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Sale } from '@/src/types/Sale';
+import { Sale, PAYMENT_METHOD_LABELS } from '@/src/types/Sale';
 import { Pencil, Trash2, Printer } from 'lucide-react';
 import { Avatar } from '@/src/components/ui/Avatar';
 import { formatBRL } from '@/src/lib/format';
@@ -53,6 +53,7 @@ export function SaleList({ sales, onEdit, onDelete, onToggleStatus }: Props) {
               <tr className="text-left text-[11px] font-semibold uppercase tracking-[.06em] text-ink-4">
                 <th className="px-4 py-3">Cliente</th>
                 <th className="px-4 py-3">Data</th>
+                <th className="px-4 py-3">Pagamento</th>
                 <th className="px-4 py-3 text-right">Itens</th>
                 <th className="px-4 py-3 text-right">Total</th>
                 <th className="px-4 py-3 text-right">Lucro</th>
@@ -80,6 +81,10 @@ export function SaleList({ sales, onEdit, onDelete, onToggleStatus }: Props) {
 
                     <td className="px-4 py-3 font-mono text-ink-3">
                       {sale.createdAt.toLocaleDateString('pt-BR')}
+                    </td>
+
+                    <td className="px-4 py-3 text-ink-3">
+                      {sale.paymentMethod ? PAYMENT_METHOD_LABELS[sale.paymentMethod] : '-'}
                     </td>
 
                     <td className="px-4 py-3 text-right font-mono text-ink-2">{sale.totalItems}</td>
