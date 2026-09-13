@@ -3,27 +3,35 @@
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { LayoutGrid, Users, Package, Tags, ShoppingBag, ClipboardList, X } from 'lucide-react';
+import { collection, onSnapshot, query, where } from 'firebase/firestore';
+import { LayoutGrid, Users, Package, Tags, ShoppingBag, ClipboardList, Boxes, X } from 'lucide-react';
 
+import { db } from '@/src/lib/firebase';
 import { useAuth } from '@/src/contexts/AuthContext';
 import { logout } from '@/src/services/authService';
-import { getClientsByUser } from '@/src/services/clientService';
-import { getProductsByUser } from '@/src/services/productService';
-import { getProductPricesByUser } from '@/src/services/priceService';
-import { getSalesByUser } from '@/src/services/saleService';
-import { getBudgetsByUser } from '@/src/services/budgetService';
 import { isInPeriod } from '@/src/lib/period';
 import { Avatar } from '@/src/components/ui/Avatar';
+
+// Coleções observadas em tempo real pra manter os contadores e a meta do mês
+// atualizados sem precisar de um refresh manual da página.
+const COUNT_COLLECTIONS = {
+  clients: 'clients',
+  products: 'products',
+  insumos: 'insumos',
+  prices: 'product_prices',
+  budgets: 'budgets',
+} as const;
 
 // Recolhida (rail) em telas grandes; expande ao passar o mouse, como no Instagram web.
 const FADE = 'lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-150 whitespace-nowrap';
 
-type CountKey = 'clients' | 'products' | 'prices' | 'sales' | 'budgets' | null;
+type CountKey = 'clients' | 'products' | 'insumos' | 'prices' | 'sales' | 'budgets' | null;
 
 const NAV_ITEMS: { label: string; href: string; icon: typeof LayoutGrid; countKey: CountKey }[] = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutGrid, countKey: null },
   { label: 'Clientes', href: '/clients', icon: Users, countKey: 'clients' },
   { label: 'Produtos', href: '/produtos', icon: Package, countKey: 'products' },
+  { label: 'Insumos', href: '/insumos', icon: Boxes, countKey: 'insumos' },
   { label: 'Tabela de Preços', href: '/price-table', icon: Tags, countKey: 'prices' },
   { label: 'Vendas', href: '/vendas', icon: ShoppingBag, countKey: 'sales' },
   { label: 'Orçamentos', href: '/orcamentos', icon: ClipboardList, countKey: 'budgets' },
@@ -39,44 +47,48 @@ export function Sidebar({ mobileOpen, onClose }: Props) {
   const router = useRouter();
   const pathname = usePathname();
 
-  const [counts, setCounts] = useState({ clients: 0, products: 0, prices: 0, sales: 0, budgets: 0 });
+  const [counts, setCounts] = useState({
+    clients: 0,
+    products: 0,
+    insumos: 0,
+    prices: 0,
+    sales: 0,
+    budgets: 0,
+  });
   const [monthRevenue, setMonthRevenue] = useState(0);
 
   useEffect(() => {
     if (!user) return;
 
-    let cancelled = false;
+    const uid = user.uid;
 
-    async function load() {
-      const [clients, products, prices, sales, budgets] = await Promise.all([
-        getClientsByUser(user!.uid),
-        getProductsByUser(user!.uid),
-        getProductPricesByUser(user!.uid),
-        getSalesByUser(user!.uid),
-        getBudgetsByUser(user!.uid),
-      ]);
+    const unsubscribers = (Object.keys(COUNT_COLLECTIONS) as (keyof typeof COUNT_COLLECTIONS)[]).map(
+      (key) =>
+        onSnapshot(query(collection(db, COUNT_COLLECTIONS[key]), where('userId', '==', uid)), (snap) => {
+          setCounts((prev) => ({ ...prev, [key]: snap.size }));
+        })
+    );
 
-      if (cancelled) return;
+    const unsubscribeSales = onSnapshot(
+      query(collection(db, 'sales'), where('userId', '==', uid)),
+      (snap) => {
+        setCounts((prev) => ({ ...prev, sales: snap.size }));
 
-      setCounts({
-        clients: clients.length,
-        products: products.length,
-        prices: prices.length,
-        sales: sales.length,
-        budgets: budgets.length,
-      });
+        const revenue = snap.docs.reduce((sum, docSnap) => {
+          const data = docSnap.data();
+          const createdAt: Date = data.createdAt?.toDate?.() ?? new Date();
+          const totalValue = typeof data.totalValue === 'number' ? data.totalValue : 0;
 
-      const revenue = sales
-        .filter((sale) => isInPeriod(sale.createdAt, 'month'))
-        .reduce((sum, sale) => sum + sale.totalValue, 0);
+          return isInPeriod(createdAt, 'month') ? sum + totalValue : sum;
+        }, 0);
 
-      setMonthRevenue(revenue);
-    }
-
-    void load();
+        setMonthRevenue(revenue);
+      }
+    );
 
     return () => {
-      cancelled = true;
+      unsubscribers.forEach((unsubscribe) => unsubscribe());
+      unsubscribeSales();
     };
   }, [user]);
 
