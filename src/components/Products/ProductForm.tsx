@@ -1,8 +1,10 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Product } from '@/src/types/Product';
+import { X } from 'lucide-react';
+import { Product, RecipeItem, StockMode } from '@/src/types/Product';
 import { ProductPrice } from '@/src/types/ProductPrice';
+import { Insumo } from '@/src/types/Insumo';
 import { useAuth } from '@/src/contexts/AuthContext';
 import { getCategoriesByUser, createCategory } from '@/src/services/categoryService';
 import { PRODUCT_CATEGORIES } from '@/src/constants/productCategories';
@@ -15,8 +17,9 @@ export type ProductFormData = {
   operationalExpensePercent: number;
   marginPercent: number;
   salePrice: number;
-  trackStock: boolean;
+  stockMode: StockMode;
   stockQuantity: number;
+  recipeItems: RecipeItem[];
 };
 
 type Props = {
@@ -24,13 +27,20 @@ type Props = {
   onCancel: () => void;
   initialData?: Product | null;
   initialPrice?: ProductPrice | null;
+  insumos: Insumo[];
 };
+
+const STOCK_MODE_OPTIONS: { value: StockMode; label: string; hint: string }[] = [
+  { value: 'none', label: 'Sem controle', hint: 'Feito sob encomenda, sem rastrear estoque.' },
+  { value: 'direct', label: 'Estoque próprio', hint: 'Produto pronto que você revende.' },
+  { value: 'recipe', label: 'Produzido (ficha técnica)', hint: 'Consome insumos ao ser vendido.' },
+];
 
 const inputClass =
   'w-full rounded-input border border-border-input bg-surface-subtle-2 px-3 py-2.5 text-[13px] text-ink placeholder:text-placeholder focus:outline-none focus:border-accent';
 const labelClass = 'mb-1.5 block text-[12px] font-semibold text-ink-2';
 
-export function ProductForm({ onSubmit, onCancel, initialData, initialPrice }: Props) {
+export function ProductForm({ onSubmit, onCancel, initialData, initialPrice, insumos }: Props) {
   const { user } = useAuth();
 
   const [name, setName] = useState(initialData?.name ?? '');
@@ -41,10 +51,13 @@ export function ProductForm({ onSubmit, onCancel, initialData, initialPrice }: P
   );
   const [marginPercent, setMarginPercent] = useState(String(initialPrice?.marginPercent ?? 0));
 
-  const [trackStock, setTrackStock] = useState(initialData?.trackStock ?? false);
+  const [stockMode, setStockMode] = useState<StockMode>(initialData?.stockMode ?? 'none');
   const [stockQuantity, setStockQuantity] = useState(
     initialData?.stockQuantity !== undefined ? String(initialData.stockQuantity) : '0'
   );
+  const [recipeItems, setRecipeItems] = useState<RecipeItem[]>(initialData?.recipeItems ?? []);
+  const [pendingInsumoId, setPendingInsumoId] = useState('');
+  const [pendingInsumoQty, setPendingInsumoQty] = useState('1');
 
   const [categories, setCategories] = useState<string[]>(
     initialData?.category ? [initialData.category] : []
@@ -100,6 +113,25 @@ export function ProductForm({ onSubmit, onCancel, initialData, initialPrice }: P
     setNewCategory('');
   }
 
+  function handleAddRecipeItem() {
+    const insumo = insumos.find((i) => i.id === pendingInsumoId);
+    if (!insumo) return;
+
+    const quantity = Math.max(0.001, Number(pendingInsumoQty) || 0);
+
+    setRecipeItems((prev) => [
+      ...prev.filter((item) => item.insumoId !== insumo.id),
+      { insumoId: insumo.id, insumoName: insumo.name, quantity },
+    ]);
+
+    setPendingInsumoId('');
+    setPendingInsumoQty('1');
+  }
+
+  function handleRemoveRecipeItem(insumoId: string) {
+    setRecipeItems((prev) => prev.filter((item) => item.insumoId !== insumoId));
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
@@ -113,6 +145,11 @@ export function ProductForm({ onSubmit, onCancel, initialData, initialPrice }: P
       return;
     }
 
+    if (stockMode === 'recipe' && recipeItems.length === 0) {
+      alert('Adicione ao menos um insumo à ficha técnica, ou escolha outro modo de estoque.');
+      return;
+    }
+
     onSubmit({
       name: name.trim().toUpperCase(),
       category,
@@ -120,8 +157,9 @@ export function ProductForm({ onSubmit, onCancel, initialData, initialPrice }: P
       operationalExpensePercent: expenseNumber,
       marginPercent: marginNumber,
       salePrice,
-      trackStock,
+      stockMode,
       stockQuantity: Math.max(0, Number(stockQuantity) || 0),
+      recipeItems: stockMode === 'recipe' ? recipeItems : [],
     });
   }
 
@@ -218,21 +256,30 @@ export function ProductForm({ onSubmit, onCancel, initialData, initialPrice }: P
         </div>
 
         <div className="rounded-block border border-border-input bg-surface-subtle-2 px-4 py-3">
-          <label className="flex items-center gap-2 text-[13px] font-semibold text-ink-2">
-            <input
-              type="checkbox"
-              checked={trackStock}
-              onChange={(e) => setTrackStock(e.target.checked)}
-              className="h-4 w-4 rounded border-border-input accent-accent"
-            />
-            Controlar estoque deste produto
-          </label>
-          <p className="mt-1 text-[11.5px] text-ink-4">
-            Ative para produtos prontos que você revende. Deixe desativado para itens feitos sob
-            encomenda, sem estoque de produto acabado.
+          <label className={labelClass}>Controle de estoque</label>
+
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+            {STOCK_MODE_OPTIONS.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => setStockMode(option.value)}
+                className={`rounded-input border px-3 py-2 text-left text-[12px] font-semibold transition ${
+                  stockMode === option.value
+                    ? 'border-accent bg-accent-soft text-accent'
+                    : 'border-border-input bg-white text-ink-2 hover:border-ink-4'
+                }`}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+
+          <p className="mt-2 text-[11.5px] text-ink-4">
+            {STOCK_MODE_OPTIONS.find((o) => o.value === stockMode)?.hint}
           </p>
 
-          {trackStock && (
+          {stockMode === 'direct' && (
             <div className="mt-3 max-w-[160px]">
               <label className={labelClass}>Quantidade em estoque</label>
               <input
@@ -243,6 +290,84 @@ export function ProductForm({ onSubmit, onCancel, initialData, initialPrice }: P
                 value={stockQuantity}
                 onChange={(e) => setStockQuantity(e.target.value)}
               />
+            </div>
+          )}
+
+          {stockMode === 'recipe' && (
+            <div className="mt-3">
+              <label className={labelClass}>Ficha técnica</label>
+
+              {insumos.length === 0 ? (
+                <p className="text-[12px] text-ink-4">
+                  Nenhum insumo cadastrado ainda. Cadastre insumos na tela de Insumos antes de
+                  montar a ficha técnica.
+                </p>
+              ) : (
+                <>
+                  <div className="grid grid-cols-1 items-end gap-2 sm:grid-cols-[1fr_100px_auto]">
+                    <select
+                      className={inputClass}
+                      value={pendingInsumoId}
+                      onChange={(e) => setPendingInsumoId(e.target.value)}
+                    >
+                      <option value="">Selecione um insumo</option>
+                      {insumos.map((insumo) => (
+                        <option key={insumo.id} value={insumo.id}>
+                          {insumo.name} ({insumo.unit})
+                        </option>
+                      ))}
+                    </select>
+
+                    <input
+                      type="number"
+                      min={0.001}
+                      step="0.001"
+                      placeholder="Qtd"
+                      value={pendingInsumoQty}
+                      onChange={(e) => setPendingInsumoQty(e.target.value)}
+                      className={inputClass}
+                    />
+
+                    <button
+                      type="button"
+                      onClick={handleAddRecipeItem}
+                      className="h-[42px] rounded-input border border-[#dcd8d0] bg-white px-4 text-[13px] font-semibold text-ink transition hover:border-ink-4"
+                    >
+                      Adicionar
+                    </button>
+                  </div>
+
+                  {recipeItems.length > 0 && (
+                    <div className="mt-3 divide-y divide-border-row rounded-block border border-border-input bg-white">
+                      {recipeItems.map((item) => {
+                        const insumo = insumos.find((i) => i.id === item.insumoId);
+
+                        return (
+                          <div
+                            key={item.insumoId}
+                            className="flex items-center justify-between gap-3 px-3 py-2"
+                          >
+                            <p className="text-[12.5px] text-ink">
+                              {item.insumoName}{' '}
+                              <span className="font-mono text-ink-3">
+                                {item.quantity} {insumo?.unit ?? ''}
+                              </span>
+                            </p>
+
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveRecipeItem(item.insumoId)}
+                              className="shrink-0 text-ink-4 transition hover:text-negative"
+                            >
+                              <X size={15} />
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </>
+              )}
             </div>
           )}
         </div>

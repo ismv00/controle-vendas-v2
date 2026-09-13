@@ -3,20 +3,36 @@
 import { useMemo, useState } from 'react';
 import { Product } from '@/src/types/Product';
 import { ProductPrice } from '@/src/types/ProductPrice';
+import { Insumo } from '@/src/types/Insumo';
 import { Pencil, Trash2, Package } from 'lucide-react';
 import { formatBRL } from '@/src/lib/format';
 
 interface Props {
   products: Product[];
   prices: ProductPrice[];
+  insumos: Insumo[];
   onEdit: (product: Product) => void;
   onDelete: (id: string) => void;
+}
+
+// Quanto dá pra produzir com o estoque atual dos insumos — o menor "quantas vezes cabe"
+// entre os itens da ficha técnica é quem limita a produção.
+function producibleQuantity(product: Product, insumos: Insumo[]): number | null {
+  if (!product.recipeItems || product.recipeItems.length === 0) return null;
+
+  const amounts = product.recipeItems.map((item) => {
+    const insumo = insumos.find((i) => i.id === item.insumoId);
+    if (!insumo || item.quantity <= 0) return 0;
+    return Math.floor(insumo.stockQuantity / item.quantity);
+  });
+
+  return Math.max(0, Math.min(...amounts));
 }
 
 const MARGIN_THRESHOLD = 60;
 const LOW_STOCK_THRESHOLD = 5;
 
-export function ProductList({ products, prices, onEdit, onDelete }: Props) {
+export function ProductList({ products, prices, insumos, onEdit, onDelete }: Props) {
   const [filter, setFilter] = useState('');
 
   const filtered = useMemo(() => {
@@ -114,7 +130,7 @@ export function ProductList({ products, prices, onEdit, onDelete }: Props) {
                   </div>
                 </div>
 
-                {product.trackStock && (
+                {product.stockMode === 'direct' && (
                   <div className="mt-3 flex items-center justify-between border-t border-border-divider-2 pt-3">
                     <span className="text-[10.5px] font-semibold uppercase tracking-[.06em] text-ink-4">
                       Estoque
@@ -130,6 +146,32 @@ export function ProductList({ products, prices, onEdit, onDelete }: Props) {
                     >
                       {(product.stockQuantity ?? 0) <= 0 ? 'Esgotado' : `${product.stockQuantity} un.`}
                     </span>
+                  </div>
+                )}
+
+                {product.stockMode === 'recipe' && (
+                  <div className="mt-3 flex items-center justify-between border-t border-border-divider-2 pt-3">
+                    <span className="text-[10.5px] font-semibold uppercase tracking-[.06em] text-ink-4">
+                      Dá pra produzir
+                    </span>
+                    {(() => {
+                      const producible = producibleQuantity(product, insumos);
+                      const value = producible ?? 0;
+
+                      return (
+                        <span
+                          className={`font-mono text-[13px] font-semibold ${
+                            value <= 0
+                              ? 'text-negative'
+                              : value <= LOW_STOCK_THRESHOLD
+                              ? 'text-warn-2'
+                              : 'text-ink'
+                          }`}
+                        >
+                          {value <= 0 ? 'Sem insumos' : `${value} un.`}
+                        </span>
+                      );
+                    })()}
                   </div>
                 )}
 

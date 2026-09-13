@@ -16,14 +16,17 @@ import {
   createProductPrice,
   updateProductPrice,
 } from '@/src/services/priceService';
+import { getInsumosByUser } from '@/src/services/insumoService';
 import { Product } from '@/src/types/Product';
 import { ProductPrice } from '@/src/types/ProductPrice';
+import { Insumo } from '@/src/types/Insumo';
 import { useAuth } from '@/src/contexts/AuthContext';
 
 export default function ProductsPage() {
   const { user, loading: authLoading } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [prices, setPrices] = useState<ProductPrice[]>([]);
+  const [insumos, setInsumos] = useState<Insumo[]>([]);
 
   const searchParams = useSearchParams();
   const openNew = searchParams.get('novo') === 'true';
@@ -36,12 +39,14 @@ export default function ProductsPage() {
     if (!user) return;
 
     setLoading(true);
-    const [productsData, pricesData] = await Promise.all([
+    const [productsData, pricesData, insumosData] = await Promise.all([
       getProductsByUser(user.uid),
       getProductPricesByUser(user.uid),
+      getInsumosByUser(user.uid),
     ]);
     setProducts(productsData);
     setPrices(pricesData);
+    setInsumos(insumosData);
     setLoading(false);
   }, [user]);
 
@@ -56,16 +61,18 @@ export default function ProductsPage() {
           name: data.name,
           category: data.category,
           cost: data.cost,
-          trackStock: data.trackStock,
+          stockMode: data.stockMode,
           stockQuantity: data.stockQuantity,
+          recipeItems: data.recipeItems,
         });
       } else {
         productId = await createProduct({
           name: data.name,
           category: data.category,
           cost: data.cost,
-          trackStock: data.trackStock,
+          stockMode: data.stockMode,
           stockQuantity: data.stockQuantity,
+          recipeItems: data.recipeItems,
           userId: user.uid,
           createdAt: new Date(),
         });
@@ -120,13 +127,15 @@ export default function ProductsPage() {
     async function fetchProducts() {
       if (!user) return;
       setLoading(true);
-      const [productsData, pricesData] = await Promise.all([
+      const [productsData, pricesData, insumosData] = await Promise.all([
         getProductsByUser(user.uid),
         getProductPricesByUser(user.uid),
+        getInsumosByUser(user.uid),
       ]);
       if (!cancelled) {
         setProducts(productsData);
         setPrices(pricesData);
+        setInsumos(insumosData);
         setLoading(false);
       }
     }
@@ -168,6 +177,7 @@ export default function ProductsPage() {
         <ProductList
           products={products}
           prices={prices}
+          insumos={insumos}
           onEdit={(product) => {
             setEditingProduct(product);
             setOpen(true);
@@ -195,6 +205,7 @@ export default function ProductsPage() {
           }}
           initialData={editingProduct}
           initialPrice={editingProduct ? prices.find((p) => p.productId === editingProduct.id) : null}
+          insumos={insumos}
         />
       </Modal>
     </div>

@@ -40,7 +40,7 @@ export function SaleForm({ clients, products, prices, onSubmit, onCancel, initia
 
   const pendingProduct = products.find((p) => p.id === pendingProductId);
   const pendingStockWarning =
-    !!pendingProduct?.trackStock && pendingQty > (pendingProduct.stockQuantity ?? 0);
+    pendingProduct?.stockMode === 'direct' && pendingQty > (pendingProduct.stockQuantity ?? 0);
 
   function handleAddProduct(product: Product, quantity: number) {
     const exists = items.find((i) => i.productId === product.id);
@@ -195,13 +195,14 @@ export function SaleForm({ clients, products, prices, onSubmit, onCancel, initia
               <option value="">Selecione um produto</option>
               {products.map((product) => {
                 const price = prices.find((p) => p.productId === product.id);
-                const stockLabel = product.trackStock
-                  ? ` · ${
-                      (product.stockQuantity ?? 0) > 0
-                        ? `${product.stockQuantity} em estoque`
-                        : 'esgotado'
-                    }`
-                  : '';
+                const stockLabel =
+                  product.stockMode === 'direct'
+                    ? ` · ${
+                        (product.stockQuantity ?? 0) > 0
+                          ? `${product.stockQuantity} em estoque`
+                          : 'esgotado'
+                      }`
+                    : '';
                 return (
                   <option
                     key={product.id}

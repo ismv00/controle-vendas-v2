@@ -12,9 +12,18 @@ import {
 } from 'firebase/firestore';
 
 import { db } from '@/src/lib/firebase';
-import { Product } from '@/src/types/Product';
+import { Product, RecipeItem, StockMode } from '@/src/types/Product';
 
 const COLLECTION = 'products';
+const INSUMOS_COLLECTION = 'insumos';
+
+// Produtos antigos usavam um campo booleano `trackStock` — docs sem `stockMode` ainda
+// caem aqui, então continuam funcionando como "estoque direto" depois da migração.
+function resolveStockMode(data: Record<string, unknown>): StockMode {
+  if (data.stockMode === 'recipe') return 'recipe';
+  if (data.stockMode === 'direct' || data.trackStock) return 'direct';
+  return 'none';
+}
 
 export async function createProduct(product: Omit<Product, 'id'>): Promise<string> {
   const docRef = await addDoc(collection(db, COLLECTION), product);
@@ -35,8 +44,9 @@ export async function getProductsByUser(userId: string): Promise<Product[]> {
       name: data.name ?? data.nome,
       category: data.category ?? data.categoria,
       cost: Number(data.cost ?? data.custo ?? 0),
-      trackStock: Boolean(data.trackStock),
+      stockMode: resolveStockMode(data),
       stockQuantity: Number(data.stockQuantity ?? 0),
+      recipeItems: Array.isArray(data.recipeItems) ? (data.recipeItems as RecipeItem[]) : [],
 
       userId: data.userId,
       createdAt: data.createdAt?.toDate?.() ?? data.migratedAt?.toDate?.() ?? new Date(),
@@ -56,8 +66,9 @@ export async function updateProduct(id: string, data: Partial<Omit<Product, 'id'
   if (data.name !== undefined) payload.name = data.name;
   if (data.category !== undefined) payload.category = data.category;
   if (data.cost !== undefined) payload.cost = data.cost;
-  if (data.trackStock !== undefined) payload.trackStock = data.trackStock;
+  if (data.stockMode !== undefined) payload.stockMode = data.stockMode;
   if (data.stockQuantity !== undefined) payload.stockQuantity = data.stockQuantity;
+  if (data.recipeItems !== undefined) payload.recipeItems = data.recipeItems;
 
   await updateDoc(doc(db, COLLECTION, id), payload);
 }
@@ -66,15 +77,37 @@ export async function getAllProducts(userId: string): Promise<Product[]> {
   return getProductsByUser(userId);
 }
 
-// Ajusta o estoque de um produto (delta positivo repõe, negativo consome) — só tem efeito
-// se o produto tiver o controle de estoque ativado, senão é ignorado silenciosamente.
+// Ajusta o estoque de um produto (delta positivo repõe, negativo consome).
+// Em modo "direto" desconta do próprio produto; em modo "receita" (ficha técnica)
+// desconta de cada insumo, proporcional à quantidade consumida por unidade; em
+// modo "none" não faz nada.
 export async function adjustStock(productId: string, delta: number) {
   const ref = doc(db, COLLECTION, productId);
   const snap = await getDoc(ref);
 
-  if (!snap.exists() || !snap.data().trackStock) return;
+  if (!snap.exists()) return;
 
-  await updateDoc(ref, { stockQuantity: increment(delta) });
+  const data = snap.data();
+  const stockMode = resolveStockMode(data);
+
+  if (stockMode === 'direct') {
+    await updateDoc(ref, { stockQuantity: increment(delta) });
+    return;
+  }
+
+  if (stockMode === 'recipe') {
+    const recipeItems = Array.isArray(data.recipeItems) ? (data.recipeItems as RecipeItem[]) : [];
+
+    await Promise.all(
+      recipeItems
+        .filter((item) => item?.insumoId)
+        .map((item) =>
+          updateDoc(doc(db, INSUMOS_COLLECTION, item.insumoId), {
+            stockQuantity: increment(delta * item.quantity),
+          }).catch(() => {})
+        )
+    );
+  }
 }
 
 export async function adjustStockForItems(
