@@ -60,7 +60,14 @@ export function BudgetForm({ clients, products, prices, onSubmit, onCancel, init
 
     setItems((prev) => [
       ...prev,
-      { productId: product.id, productName: product.name, quantity: qty, unitPrice, subtotal },
+      {
+        productId: product.id,
+        productName: product.name,
+        imageUrl: product.imageUrl,
+        quantity: qty,
+        unitPrice,
+        subtotal,
+      },
     ]);
   }
 

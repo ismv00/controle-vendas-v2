@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import { X } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { X, Image as ImageIcon } from 'lucide-react';
 import { Product, RecipeItem, StockMode } from '@/src/types/Product';
 import { ProductPrice } from '@/src/types/ProductPrice';
 import { Insumo } from '@/src/types/Insumo';
@@ -20,6 +20,8 @@ export type ProductFormData = {
   stockMode: StockMode;
   stockQuantity: number;
   recipeItems: RecipeItem[];
+  imageFile?: File | null;
+  removeImage?: boolean;
 };
 
 type Props = {
@@ -44,6 +46,10 @@ export function ProductForm({ onSubmit, onCancel, initialData, initialPrice, ins
   const { user } = useAuth();
 
   const [name, setName] = useState(initialData?.name ?? '');
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState(initialData?.imageUrl ?? '');
+  const [removeImage, setRemoveImage] = useState(false);
+  const imageInputRef = useRef<HTMLInputElement>(null);
   const [category, setCategory] = useState(initialData?.category ?? '');
   const [cost, setCost] = useState(initialData ? String(initialData.cost) : '');
   const [operationalExpensePercent, setOperationalExpensePercent] = useState(
@@ -132,6 +138,22 @@ export function ProductForm({ onSubmit, onCancel, initialData, initialPrice, ins
     setRecipeItems((prev) => prev.filter((item) => item.insumoId !== insumoId));
   }
 
+  function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+
+    setImageFile(file);
+    setRemoveImage(false);
+    setImagePreview(URL.createObjectURL(file));
+  }
+
+  function handleRemoveImage() {
+    setImageFile(null);
+    setImagePreview('');
+    setRemoveImage(true);
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
@@ -160,6 +182,8 @@ export function ProductForm({ onSubmit, onCancel, initialData, initialPrice, ins
       stockMode,
       stockQuantity: Math.max(0, Number(stockQuantity) || 0),
       recipeItems: stockMode === 'recipe' ? recipeItems : [],
+      imageFile,
+      removeImage,
     });
   }
 
@@ -175,6 +199,51 @@ export function ProductForm({ onSubmit, onCancel, initialData, initialPrice, ins
             onChange={(e) => setName(e.target.value)}
             required
           />
+        </div>
+
+        <div>
+          <label className={labelClass}>Foto do produto</label>
+          <div className="flex items-center gap-4">
+            <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-block border border-border-input bg-surface-subtle-2">
+              {imagePreview ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={imagePreview} alt="" className="h-full w-full object-cover" />
+              ) : (
+                <ImageIcon size={24} className="text-ink-4" />
+              )}
+            </div>
+
+            <div className="flex flex-col items-start gap-2">
+              <button
+                type="button"
+                onClick={() => imageInputRef.current?.click()}
+                className="rounded-input border border-[#dcd8d0] bg-white px-4 py-2 text-[13px] font-semibold text-ink transition hover:border-ink-4"
+              >
+                {imagePreview ? 'Trocar foto' : 'Enviar foto'}
+              </button>
+
+              {imagePreview && (
+                <button
+                  type="button"
+                  onClick={handleRemoveImage}
+                  className="text-[12px] font-medium text-ink-4 transition hover:text-negative"
+                >
+                  Remover foto
+                </button>
+              )}
+            </div>
+
+            <input
+              ref={imageInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleImageChange}
+              className="hidden"
+            />
+          </div>
+          <p className="mt-2 text-[11.5px] text-ink-4">
+            Aparece na lista de produtos e nos itens de venda/orçamento. PNG ou JPG, até 2MB.
+          </p>
         </div>
 
         <div>

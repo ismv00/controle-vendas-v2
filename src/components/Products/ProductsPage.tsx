@@ -10,6 +10,8 @@ import {
   getProductsByUser,
   updateProduct,
   deleteProduct,
+  uploadProductImage,
+  removeProductImage,
 } from '@/src/services/productService';
 import {
   getProductPricesByUser,
@@ -79,6 +81,17 @@ export default function ProductsPage() {
       }
 
       if (productId) {
+        if (data.imageFile) {
+          try {
+            await uploadProductImage(user.uid, productId, data.imageFile);
+          } catch (err) {
+            console.error(err);
+            alert(err instanceof Error ? err.message : 'Não foi possível enviar a foto do produto.');
+          }
+        } else if (data.removeImage && editingProduct?.imageUrl) {
+          await removeProductImage(productId, editingProduct.imageUrl);
+        }
+
         const existingPrice = prices.find((p) => p.productId === productId);
         const pricePayload = {
           productId,

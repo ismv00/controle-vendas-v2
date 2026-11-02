@@ -147,6 +147,7 @@ function BudgetsPageContent() {
         return {
           productId: item.productId,
           productName: item.productName,
+          imageUrl: item.imageUrl,
           quantity: item.quantity,
           baseCost,
           basePrice: item.unitPrice,

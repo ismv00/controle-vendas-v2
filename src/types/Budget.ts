@@ -1,6 +1,7 @@
 export interface BudgetItem {
   productId: string;
   productName: string;
+  imageUrl?: string;
   quantity: number;
   unitPrice: number;
   subtotal: number;

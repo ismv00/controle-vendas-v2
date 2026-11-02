@@ -11,6 +11,7 @@ export type Product = {
   name: string;
   category: string;
   cost: number;
+  imageUrl?: string;
   stockMode?: StockMode;
   stockQuantity?: number;
   recipeItems?: RecipeItem[];

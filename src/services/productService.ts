@@ -10,8 +10,9 @@ import {
   updateDoc,
   increment,
 } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 
-import { db } from '@/src/lib/firebase';
+import { db, storage } from '@/src/lib/firebase';
 import { Product, RecipeItem, StockMode } from '@/src/types/Product';
 
 const COLLECTION = 'products';
@@ -44,6 +45,7 @@ export async function getProductsByUser(userId: string): Promise<Product[]> {
       name: data.name ?? data.nome,
       category: data.category ?? data.categoria,
       cost: Number(data.cost ?? data.custo ?? 0),
+      imageUrl: typeof data.imageUrl === 'string' ? data.imageUrl : undefined,
       stockMode: resolveStockMode(data),
       stockQuantity: Number(data.stockQuantity ?? 0),
       recipeItems: Array.isArray(data.recipeItems) ? (data.recipeItems as RecipeItem[]) : [],
@@ -66,6 +68,7 @@ export async function updateProduct(id: string, data: Partial<Omit<Product, 'id'
   if (data.name !== undefined) payload.name = data.name;
   if (data.category !== undefined) payload.category = data.category;
   if (data.cost !== undefined) payload.cost = data.cost;
+  if (data.imageUrl !== undefined) payload.imageUrl = data.imageUrl;
   if (data.stockMode !== undefined) payload.stockMode = data.stockMode;
   if (data.stockQuantity !== undefined) payload.stockQuantity = data.stockQuantity;
   if (data.recipeItems !== undefined) payload.recipeItems = data.recipeItems;
@@ -115,4 +118,40 @@ export async function adjustStockForItems(
   sign: 1 | -1
 ) {
   await Promise.all(items.map((item) => adjustStock(item.productId, sign * item.quantity)));
+}
+
+const MAX_IMAGE_SIZE = 2 * 1024 * 1024; // 2MB
+
+export async function uploadProductImage(
+  userId: string,
+  productId: string,
+  file: File
+): Promise<string> {
+  if (!file.type.startsWith('image/')) {
+    throw new Error('O arquivo precisa ser uma imagem.');
+  }
+
+  if (file.size > MAX_IMAGE_SIZE) {
+    throw new Error('A imagem precisa ter até 2MB.');
+  }
+
+  const extension = file.name.split('.').pop() || 'png';
+  const imageRef = ref(storage, `product-images/${userId}/${productId}.${extension}`);
+
+  await uploadBytes(imageRef, file);
+  const imageUrl = await getDownloadURL(imageRef);
+
+  await updateDoc(doc(db, COLLECTION, productId), { imageUrl });
+
+  return imageUrl;
+}
+
+export async function removeProductImage(productId: string, imageUrl: string) {
+  try {
+    await deleteObject(ref(storage, imageUrl));
+  } catch {
+    // segue mesmo se o arquivo já não existir no Storage
+  }
+
+  await updateDoc(doc(db, COLLECTION, productId), { imageUrl: '' });
 }

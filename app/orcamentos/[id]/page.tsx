@@ -222,7 +222,19 @@ export default function BudgetPrintPage() {
           <tbody>
             {budget.items.map((item) => (
               <tr key={item.productId} className="border-b border-border-row">
-                <td className="py-2.5 text-ink">{item.productName}</td>
+                <td className="py-2.5 text-ink">
+                  <div className="flex items-center gap-2.5">
+                    {item.imageUrl && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={item.imageUrl}
+                        alt=""
+                        className="h-8 w-8 shrink-0 rounded border border-border-divider-2 object-cover"
+                      />
+                    )}
+                    <span>{item.productName}</span>
+                  </div>
+                </td>
                 <td className="py-2.5 text-right font-mono text-ink-2">{item.quantity}</td>
                 <td className="py-2.5 text-right font-mono text-ink-2">{formatBRL(item.unitPrice)}</td>
                 <td className="py-2.5 text-right font-mono font-semibold text-ink">

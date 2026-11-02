@@ -79,9 +79,19 @@ export function ProductList({ products, prices, insumos, onEdit, onDelete }: Pro
                 className="rounded-card border border-border-divider-2 bg-surface p-4"
               >
                 <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <p className="truncate text-[13.5px] font-semibold text-ink">{product.name}</p>
-                    <p className="text-[11.5px] text-mute">{product.category || 'Sem categoria'}</p>
+                  <div className="flex min-w-0 items-center gap-3">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-block border border-border-divider-2 bg-surface-subtle-2">
+                      {product.imageUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={product.imageUrl} alt="" className="h-full w-full object-cover" />
+                      ) : (
+                        <Package size={18} className="text-mute-2" />
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="truncate text-[13.5px] font-semibold text-ink">{product.name}</p>
+                      <p className="text-[11.5px] text-mute">{product.category || 'Sem categoria'}</p>
+                    </div>
                   </div>
 
                   {price ? (

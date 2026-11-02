@@ -1,6 +1,7 @@
 export interface SaleItem {
   productId: string;
   productName: string;
+  imageUrl?: string;
   quantity: number;
   baseCost: number;
   basePrice: number;

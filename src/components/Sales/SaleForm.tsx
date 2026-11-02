@@ -66,6 +66,7 @@ export function SaleForm({ clients, products, prices, onSubmit, onCancel, initia
       {
         productId: product.id,
         productName: product.name,
+        imageUrl: product.imageUrl,
         baseCost,
         basePrice,
         price: basePrice,
