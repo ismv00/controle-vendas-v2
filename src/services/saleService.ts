@@ -75,6 +75,8 @@ function mapSale(id: string, data: Record<string, unknown>): Sale {
 
     clientId: data.clientId as string,
     clientName: data.clientName as string,
+    clientFantasy: typeof data.clientFantasy === 'string' ? data.clientFantasy : undefined,
+    clientPhone: typeof data.clientPhone === 'string' ? data.clientPhone : undefined,
 
     items,
 

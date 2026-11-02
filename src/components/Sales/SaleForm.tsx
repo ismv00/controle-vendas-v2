@@ -15,6 +15,8 @@ interface Props {
   onSubmit: (data: {
     clientId: string;
     clientName: string;
+    clientFantasy?: string;
+    clientPhone?: string;
     items: SaleItem[];
     totalItems: number;
     totalValue: number;
@@ -129,6 +131,8 @@ export function SaleForm({ clients, products, prices, onSubmit, onCancel, initia
     onSubmit({
       clientId,
       clientName: client.name,
+      clientFantasy: client.fantasy || undefined,
+      clientPhone: client.phone || undefined,
       items,
       totalItems: totals.totalItems,
       totalValue: totals.totalValue,

@@ -91,6 +91,8 @@ function SalesPageContent() {
   async function handleSaveSale(data: {
     clientId: string;
     clientName: string;
+    clientFantasy?: string;
+    clientPhone?: string;
     items: SaleItem[];
     totalItems: number;
     totalValue: number;

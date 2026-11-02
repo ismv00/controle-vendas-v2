@@ -6,7 +6,7 @@ import { Pencil, Trash2, Printer, ShoppingBag } from 'lucide-react';
 import { Budget } from '@/src/types/Budget';
 import { Avatar } from '@/src/components/ui/Avatar';
 import { Pill } from '@/src/components/ui/Pill';
-import { formatBRL } from '@/src/lib/format';
+import { formatBRL, formatClientDisplay } from '@/src/lib/format';
 
 interface Props {
   budgets: Budget[];
@@ -83,7 +83,9 @@ export function BudgetList({ budgets, onEdit, onDelete, onConvert }: Props) {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2.5">
                         <Avatar name={budget.clientName} size={28} />
-                        <span className="font-semibold text-ink">{budget.clientName}</span>
+                        <span className="font-semibold text-ink">
+                          {formatClientDisplay(budget.clientName, budget.clientFantasy)}
+                        </span>
                       </div>
                     </td>
 

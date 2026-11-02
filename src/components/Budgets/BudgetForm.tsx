@@ -15,6 +15,7 @@ interface Props {
   onSubmit: (data: {
     clientId: string | null;
     clientName: string;
+    clientFantasy?: string;
     clientPhone: string;
     items: BudgetItem[];
     totalItems: number;
@@ -31,6 +32,7 @@ const labelClass = 'mb-1.5 block text-[12px] font-semibold text-ink-2';
 export function BudgetForm({ clients, products, prices, onSubmit, onCancel, initialData }: Props) {
   const [clientId, setClientId] = useState(initialData?.clientId ?? '');
   const [clientName, setClientName] = useState(initialData?.clientName ?? '');
+  const [clientFantasy, setClientFantasy] = useState(initialData?.clientFantasy ?? '');
   const [clientPhone, setClientPhone] = useState(initialData?.clientPhone ?? '');
   const [items, setItems] = useState<BudgetItem[]>(initialData?.items ?? []);
   const [pendingProductId, setPendingProductId] = useState('');
@@ -42,6 +44,7 @@ export function BudgetForm({ clients, products, prices, onSubmit, onCancel, init
     const client = clients.find((c) => c.id === id);
     if (client) {
       setClientName(client.name);
+      setClientFantasy(client.fantasy);
       setClientPhone(client.phone);
     }
   }
@@ -103,6 +106,7 @@ export function BudgetForm({ clients, products, prices, onSubmit, onCancel, init
     onSubmit({
       clientId: clientId || null,
       clientName: clientName.trim(),
+      clientFantasy: clientFantasy.trim() || undefined,
       clientPhone: clientPhone.trim(),
       items,
       totalItems: totals.totalItems,
@@ -140,6 +144,7 @@ export function BudgetForm({ clients, products, prices, onSubmit, onCancel, init
               value={clientName}
               onChange={(e) => {
                 setClientName(e.target.value);
+                setClientFantasy('');
                 setClientId('');
               }}
               required

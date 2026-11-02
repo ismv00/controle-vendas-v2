@@ -132,7 +132,7 @@ function BudgetsPageContent() {
       if (!clientId) {
         clientId = await createClient({
           name: budget.clientName,
-          fantasy: '',
+          fantasy: budget.clientFantasy ?? '',
           address: '',
           phone: budget.clientPhone,
           userId: user.uid,
@@ -164,6 +164,8 @@ function BudgetsPageContent() {
       const saleId = await createSale({
         clientId,
         clientName: budget.clientName,
+        clientFantasy: budget.clientFantasy,
+        clientPhone: budget.clientPhone,
         items: saleItems,
         totalItems: budget.totalItems,
         totalValue: budget.totalValue,

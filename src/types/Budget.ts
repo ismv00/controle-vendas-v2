@@ -14,6 +14,7 @@ export interface Budget {
 
   clientId: string | null;
   clientName: string;
+  clientFantasy?: string;
   clientPhone: string;
 
   items: BudgetItem[];

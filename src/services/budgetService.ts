@@ -45,6 +45,7 @@ function mapBudget(id: string, data: Record<string, unknown>): Budget {
 
     clientId: (data.clientId as string | null) ?? null,
     clientName: (data.clientName as string) ?? '',
+    clientFantasy: typeof data.clientFantasy === 'string' ? data.clientFantasy : undefined,
     clientPhone: (data.clientPhone as string) ?? '',
 
     items: (data.items as Budget['items']) ?? [],

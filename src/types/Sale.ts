@@ -16,6 +16,8 @@ export interface Sale {
 
   clientId: string;
   clientName: string;
+  clientFantasy?: string;
+  clientPhone?: string;
 
   items: SaleItem[];
 

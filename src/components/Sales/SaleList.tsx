@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { Sale, PAYMENT_METHOD_LABELS } from '@/src/types/Sale';
 import { Pencil, Trash2, Printer } from 'lucide-react';
 import { Avatar } from '@/src/components/ui/Avatar';
-import { formatBRL } from '@/src/lib/format';
+import { formatBRL, formatClientDisplay } from '@/src/lib/format';
 
 interface Props {
   sales: Sale[];
@@ -75,7 +75,9 @@ export function SaleList({ sales, onEdit, onDelete, onToggleStatus }: Props) {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2.5">
                         <Avatar name={sale.clientName} size={28} />
-                        <span className="font-semibold text-ink">{sale.clientName}</span>
+                        <span className="font-semibold text-ink">
+                          {formatClientDisplay(sale.clientName, sale.clientFantasy)}
+                        </span>
                       </div>
                     </td>
 

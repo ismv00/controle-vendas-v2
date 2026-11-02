@@ -2,6 +2,11 @@ export function formatBRL(value: number) {
   return `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
+export function formatClientDisplay(name: string, fantasy?: string | null) {
+  const trimmedFantasy = fantasy?.trim();
+  return trimmedFantasy ? `${name} · ${trimmedFantasy}` : name;
+}
+
 export function formatPhone(phone: string) {
   const digits = phone.replace(/\D/g, '');
 
