@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import QRCode from 'qrcode';
-import { ArrowLeft, Printer, Copy, Check, MessageCircle } from 'lucide-react';
+import { ArrowLeft, Printer, Copy, Check, MessageCircle, Share2 } from 'lucide-react';
 
 import { useAuth } from '@/src/contexts/AuthContext';
 import { getBudgetById } from '@/src/services/budgetService';
@@ -11,6 +11,7 @@ import { Budget } from '@/src/types/Budget';
 import { formatBRL, formatClientDisplay } from '@/src/lib/format';
 import { buildPixPayload } from '@/src/lib/pix';
 import { buildWhatsAppLink } from '@/src/lib/whatsapp';
+import { generatePdfFile, sharePdfFile } from '@/src/lib/pdf';
 
 function formatControlNumber(n: number) {
   return `#${String(n).padStart(4, '0')}`;
@@ -25,6 +26,8 @@ export default function BudgetPrintPage() {
   const [notFound, setNotFound] = useState(false);
   const [pixQrCode, setPixQrCode] = useState('');
   const [pixCopied, setPixCopied] = useState(false);
+  const [sharingPdf, setSharingPdf] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -135,6 +138,32 @@ export default function BudgetPrintPage() {
     window.open(link, '_blank');
   }
 
+  async function handleSharePdf() {
+    if (!cardRef.current) return;
+
+    setSharingPdf(true);
+
+    try {
+      const file = await generatePdfFile(
+        cardRef.current,
+        `orcamento-${formatControlNumber(budget!.controlNumber)}.pdf`
+      );
+
+      await sharePdfFile(
+        file,
+        `Orçamento ${formatControlNumber(budget!.controlNumber)}`,
+        `Orçamento da ${headerName}`
+      );
+    } catch (err) {
+      if ((err as Error)?.name !== 'AbortError') {
+        console.error(err);
+        alert('Não foi possível gerar o PDF. Tente novamente.');
+      }
+    } finally {
+      setSharingPdf(false);
+    }
+  }
+
   return (
     <div className="min-h-screen bg-appbg py-8 print:bg-white print:py-0">
       <div className="mx-auto mb-5 flex w-full max-w-[720px] items-center justify-between px-4 print:hidden">
@@ -146,13 +175,22 @@ export default function BudgetPrintPage() {
           Voltar
         </button>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2">
           <button
             onClick={handleSendWhatsApp}
             className="flex items-center gap-1.5 rounded-input border border-[#dcd8d0] bg-white px-4 py-[9px] text-[13px] font-semibold text-ink transition hover:border-ink-4"
           >
             <MessageCircle size={15} />
             Enviar por WhatsApp
+          </button>
+
+          <button
+            onClick={handleSharePdf}
+            disabled={sharingPdf}
+            className="flex items-center gap-1.5 rounded-input border border-[#dcd8d0] bg-white px-4 py-[9px] text-[13px] font-semibold text-ink transition hover:border-ink-4 disabled:opacity-60"
+          >
+            <Share2 size={15} />
+            {sharingPdf ? 'Gerando PDF...' : 'Compartilhar PDF'}
           </button>
 
           <button
@@ -165,7 +203,10 @@ export default function BudgetPrintPage() {
         </div>
       </div>
 
-      <div className="mx-auto w-full max-w-[720px] rounded-card border border-border-divider-2 bg-white p-8 text-ink print:max-w-none print:rounded-none print:border-0 print:p-0">
+      <div
+        ref={cardRef}
+        className="mx-auto w-full max-w-[720px] rounded-card border border-border-divider-2 bg-white p-8 text-ink print:max-w-none print:rounded-none print:border-0 print:p-0"
+      >
         {/* Cabeçalho */}
         <div className="flex items-start justify-between border-b border-border-divider-2 pb-5">
           <div className="flex items-center gap-3">
