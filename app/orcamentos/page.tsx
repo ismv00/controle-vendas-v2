@@ -53,7 +53,8 @@ function BudgetsPageContent() {
       getProductPricesByUser(userId),
     ]);
 
-    setBudgets(budgetsData);
+    // Orçamento convertido continua no banco (exportação/histórico), só some desta lista.
+    setBudgets(budgetsData.filter((b) => !b.convertedSaleId));
     setClients(clientsData);
     setProducts(productsData);
     setPrices(pricesData);
@@ -78,7 +79,7 @@ function BudgetsPageContent() {
 
       if (cancelled) return;
 
-      setBudgets(budgetsData);
+      setBudgets(budgetsData.filter((b) => !b.convertedSaleId));
       setClients(clientsData);
       setProducts(productsData);
       setPrices(pricesData);
