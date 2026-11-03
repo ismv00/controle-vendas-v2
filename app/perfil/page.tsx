@@ -309,7 +309,7 @@ function ProfilePageContent() {
 
         {logoError && <p className="mt-3 text-[12px] text-negative">{logoError}</p>}
         <p className="mt-3 text-[12px] text-ink-4">
-          Aparece no menu lateral e nos orçamentos impressos. PNG ou JPG, até 2MB.
+          Aparece no menu lateral e nos orçamentos impressos. PNG ou JPG, até 5MB.
         </p>
       </div>
 

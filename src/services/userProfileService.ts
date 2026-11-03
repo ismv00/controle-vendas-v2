@@ -30,7 +30,7 @@ export async function updateUserProfile(uid: string, data: Partial<UserProfile>)
   await setDoc(doc(db, COLLECTION, uid), data, { merge: true });
 }
 
-const MAX_LOGO_SIZE = 2 * 1024 * 1024; // 2MB
+const MAX_LOGO_SIZE = 5 * 1024 * 1024; // 5MB
 
 export async function uploadCompanyLogo(uid: string, file: File): Promise<string> {
   if (!file.type.startsWith('image/')) {
@@ -38,7 +38,7 @@ export async function uploadCompanyLogo(uid: string, file: File): Promise<string
   }
 
   if (file.size > MAX_LOGO_SIZE) {
-    throw new Error('A imagem precisa ter até 2MB.');
+    throw new Error('A imagem precisa ter até 5MB.');
   }
 
   const extension = file.name.split('.').pop() || 'png';

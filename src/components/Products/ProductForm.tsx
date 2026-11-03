@@ -269,7 +269,7 @@ export function ProductForm({ onSubmit, onCancel, initialData, initialPrice, ins
             />
           </div>
           <p className="mt-2 text-[11.5px] text-ink-4">
-            Aparece na lista de produtos e nos itens de venda/orçamento. PNG ou JPG, até 2MB.
+            Aparece na lista de produtos e nos itens de venda/orçamento. PNG ou JPG, até 5MB.
           </p>
         </div>
 

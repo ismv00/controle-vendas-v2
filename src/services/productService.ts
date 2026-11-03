@@ -120,7 +120,7 @@ export async function adjustStockForItems(
   await Promise.all(items.map((item) => adjustStock(item.productId, sign * item.quantity)));
 }
 
-const MAX_IMAGE_SIZE = 2 * 1024 * 1024; // 2MB
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
 
 export async function uploadProductImage(
   userId: string,
@@ -132,7 +132,7 @@ export async function uploadProductImage(
   }
 
   if (file.size > MAX_IMAGE_SIZE) {
-    throw new Error('A imagem precisa ter até 2MB.');
+    throw new Error('A imagem precisa ter até 5MB.');
   }
 
   const extension = file.name.split('.').pop() || 'png';
