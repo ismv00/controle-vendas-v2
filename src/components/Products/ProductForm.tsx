@@ -8,7 +8,6 @@ import { Insumo } from '@/src/types/Insumo';
 import { useAuth } from '@/src/contexts/AuthContext';
 import { getCategoriesByUser, createCategory } from '@/src/services/categoryService';
 import { PRODUCT_CATEGORIES } from '@/src/constants/productCategories';
-import { formatBRL } from '@/src/lib/format';
 
 export type ProductFormData = {
   name: string;
@@ -56,6 +55,7 @@ export function ProductForm({ onSubmit, onCancel, initialData, initialPrice, ins
     String(initialPrice?.operationalExpensePercent ?? 0)
   );
   const [marginPercent, setMarginPercent] = useState(String(initialPrice?.marginPercent ?? 0));
+  const [salePriceInput, setSalePriceInput] = useState(String(initialPrice?.salePrice ?? 0));
 
   const [stockMode, setStockMode] = useState<StockMode>(initialData?.stockMode ?? 'none');
   const [stockQuantity, setStockQuantity] = useState(
@@ -97,13 +97,40 @@ export function ProductForm({ onSubmit, onCancel, initialData, initialPrice, ins
   const costNumber = Number(cost) || 0;
   const expenseNumber = Number(operationalExpensePercent) || 0;
   const marginNumber = Number(marginPercent) || 0;
+  const salePrice = Number(salePriceInput) || 0;
 
   const baseCost = useMemo(
     () => costNumber + costNumber * (expenseNumber / 100),
     [costNumber, expenseNumber]
   );
 
-  const salePrice = useMemo(() => baseCost + baseCost * (marginNumber / 100), [baseCost, marginNumber]);
+  // Custo/Despesa mudam mantendo a margem fixa (recalcula o preço). Margem e Preço de venda
+  // se alimentam um do outro: editar qualquer um dos dois recalcula o outro na hora.
+  function handleCostChange(value: string) {
+    setCost(value);
+    const newBaseCost = (Number(value) || 0) + (Number(value) || 0) * (expenseNumber / 100);
+    setSalePriceInput((newBaseCost + newBaseCost * (marginNumber / 100)).toFixed(2));
+  }
+
+  function handleExpenseChange(value: string) {
+    setOperationalExpensePercent(value);
+    const newExpense = Number(value) || 0;
+    const newBaseCost = costNumber + costNumber * (newExpense / 100);
+    setSalePriceInput((newBaseCost + newBaseCost * (marginNumber / 100)).toFixed(2));
+  }
+
+  function handleMarginChange(value: string) {
+    setMarginPercent(value);
+    const newMargin = Number(value) || 0;
+    setSalePriceInput((baseCost + baseCost * (newMargin / 100)).toFixed(2));
+  }
+
+  function handleSalePriceChange(value: string) {
+    setSalePriceInput(value);
+    const newPrice = Number(value) || 0;
+    const newMargin = baseCost > 0 ? ((newPrice - baseCost) / baseCost) * 100 : 0;
+    setMarginPercent(newMargin.toFixed(2));
+  }
 
   async function handleAddCategory() {
     if (!newCategory.trim() || !user) return;
@@ -289,7 +316,7 @@ export function ProductForm({ onSubmit, onCancel, initialData, initialPrice, ins
               step="0.01"
               className={inputClass}
               value={cost}
-              onChange={(e) => setCost(e.target.value)}
+              onChange={(e) => handleCostChange(e.target.value)}
               required
             />
           </div>
@@ -301,7 +328,7 @@ export function ProductForm({ onSubmit, onCancel, initialData, initialPrice, ins
               step="0.01"
               className={inputClass}
               value={operationalExpensePercent}
-              onChange={(e) => setOperationalExpensePercent(e.target.value)}
+              onChange={(e) => handleExpenseChange(e.target.value)}
             />
           </div>
 
@@ -312,15 +339,25 @@ export function ProductForm({ onSubmit, onCancel, initialData, initialPrice, ins
               step="0.01"
               className={inputClass}
               value={marginPercent}
-              onChange={(e) => setMarginPercent(e.target.value)}
+              onChange={(e) => handleMarginChange(e.target.value)}
             />
           </div>
         </div>
 
         <div className="rounded-block border border-[#e0eae4] bg-[#f3f6f4] px-4 py-3">
-          <p className="text-[12px] text-ink-2">Preço de venda sugerido</p>
-          <p className="mt-1 font-mono text-[18px] font-semibold text-[#14663f]">
-            {formatBRL(salePrice)}
+          <label className={labelClass}>Preço de venda</label>
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-[18px] font-semibold text-[#14663f]">R$</span>
+            <input
+              type="number"
+              step="0.01"
+              className="w-full border-none bg-transparent font-mono text-[18px] font-semibold text-[#14663f] focus:outline-none"
+              value={salePriceInput}
+              onChange={(e) => handleSalePriceChange(e.target.value)}
+            />
+          </div>
+          <p className="mt-1 text-[11px] text-ink-4">
+            Altere o preço direto aqui, ou a margem acima — um recalcula o outro.
           </p>
         </div>
 
