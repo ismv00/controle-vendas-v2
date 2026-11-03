@@ -14,6 +14,7 @@ import {
 
 import { db } from '../lib/firebase';
 import { getNextSequenceNumber } from '../lib/sequence';
+import { stripUndefinedDeep } from '../lib/firestoreUtils';
 import { adjustStockForItems } from './productService';
 import { Sale, SaleItem, PaymentMethod } from '../types/Sale';
 
@@ -24,11 +25,11 @@ const VALID_PAYMENT_METHODS: PaymentMethod[] = ['dinheiro', 'pix', 'cartao', 'ou
 export async function createSale(sale: Omit<Sale, 'id' | 'createdAt' | 'receiptNumber'>): Promise<string> {
   const receiptNumber = await getNextSequenceNumber(sale.userId, 'nextSaleNumber');
 
-  const payload = {
+  const payload = stripUndefinedDeep({
     ...sale,
     receiptNumber,
     createdAt: new Date(),
-  };
+  });
 
   const docRef = await addDoc(collection(db, COLLECTION), payload);
   await adjustStockForItems(sale.items, -1);
@@ -124,10 +125,13 @@ export async function updateSale(id: string, data: Partial<Sale>) {
     await adjustStockForItems(data.items, -1);
   }
 
-  await updateDoc(doc(db, COLLECTION, id), {
-    ...data,
-    updatedAt: new Date(),
-  });
+  await updateDoc(
+    doc(db, COLLECTION, id),
+    stripUndefinedDeep({
+      ...data,
+      updatedAt: new Date(),
+    })
+  );
 }
 
 // DELETE

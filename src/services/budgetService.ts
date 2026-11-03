@@ -14,6 +14,7 @@ import {
 
 import { db } from '../lib/firebase';
 import { getNextSequenceNumber } from '../lib/sequence';
+import { stripUndefinedDeep } from '../lib/firestoreUtils';
 import { Budget } from '../types/Budget';
 
 const COLLECTION = 'budgets';
@@ -23,12 +24,12 @@ export async function createBudget(
 ): Promise<string> {
   const controlNumber = await getNextSequenceNumber(budget.userId, 'nextBudgetNumber');
 
-  const payload = {
+  const payload = stripUndefinedDeep({
     ...budget,
     controlNumber,
     convertedSaleId: null,
     createdAt: new Date(),
-  };
+  });
 
   const docRef = await addDoc(collection(db, COLLECTION), payload);
   return docRef.id;
@@ -81,10 +82,13 @@ export async function getBudgetById(id: string): Promise<Budget | null> {
 }
 
 export async function updateBudget(id: string, data: Partial<Budget>) {
-  await updateDoc(doc(db, COLLECTION, id), {
-    ...data,
-    updatedAt: new Date(),
-  });
+  await updateDoc(
+    doc(db, COLLECTION, id),
+    stripUndefinedDeep({
+      ...data,
+      updatedAt: new Date(),
+    })
+  );
 }
 
 export async function deleteBudget(id: string) {
