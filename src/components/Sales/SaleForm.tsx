@@ -34,7 +34,7 @@ const labelClass = 'mb-1.5 block text-[12px] font-semibold text-ink-2';
 export function SaleForm({ clients, products, prices, onSubmit, onCancel, initialData }: Props) {
   const [clientId, setClientId] = useState(initialData?.clientId ?? '');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | ''>(
-    initialData?.paymentMethod ?? ''
+    initialData?.paymentMethod ?? 'pix'
   );
   const [items, setItems] = useState<SaleItem[]>(initialData?.items ?? []);
   const [pendingProductId, setPendingProductId] = useState('');
