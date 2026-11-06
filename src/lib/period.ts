@@ -69,6 +69,12 @@ export function getPeriodRange(period: Period, reference: Date = new Date()): Pe
   return { start, end };
 }
 
+function daysInMonth(year: number, month: number) {
+  return new Date(year, month + 1, 0).getDate();
+}
+
+// O período atual nunca passa de "hoje" (não existe venda no futuro), então comparar contra
+// o mês/ano anterior inteiro é injusto — compara sempre até o mesmo dia do período anterior.
 export function getPreviousPeriodRange(period: Period, reference: Date = new Date()): PeriodRange {
   if (period === 'today') {
     const yesterday = new Date(reference);
@@ -78,11 +84,17 @@ export function getPreviousPeriodRange(period: Period, reference: Date = new Dat
 
   if (period === 'month') {
     const lastMonth = new Date(reference.getFullYear(), reference.getMonth() - 1, 1);
-    return getPeriodRange('month', lastMonth);
+    const day = Math.min(reference.getDate(), daysInMonth(lastMonth.getFullYear(), lastMonth.getMonth()));
+    const start = new Date(lastMonth.getFullYear(), lastMonth.getMonth(), 1, 0, 0, 0, 0);
+    const end = new Date(lastMonth.getFullYear(), lastMonth.getMonth(), day, 23, 59, 59, 999);
+    return { start, end };
   }
 
-  const lastYear = new Date(reference.getFullYear() - 1, reference.getMonth(), 1);
-  return getPeriodRange('year', lastYear);
+  const lastYear = reference.getFullYear() - 1;
+  const day = Math.min(reference.getDate(), daysInMonth(lastYear, reference.getMonth()));
+  const start = new Date(lastYear, 0, 1, 0, 0, 0, 0);
+  const end = new Date(lastYear, reference.getMonth(), day, 23, 59, 59, 999);
+  return { start, end };
 }
 
 /** Janela imediatamente anterior a `range`, com a mesma duração — usada para comparar períodos customizados. */
