@@ -128,7 +128,7 @@ export function ProductList({ products, prices, insumos, onEdit, onDelete }: Pro
 
                   <div className="text-right">
                     <p className="text-[10.5px] font-semibold uppercase tracking-[.06em] text-ink-4">
-                      Margem
+                      Markup
                     </p>
                     <p
                       className={`mt-1 font-mono text-[14px] ${

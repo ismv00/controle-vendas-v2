@@ -13,10 +13,9 @@ interface Props {
 
 type Filter = 'all' | 'negative' | 'lowMargin';
 
+// baseCost já é custo + despesa combinados — não subtrair a despesa de novo aqui.
 function calculateProfit(price: ProductPrice): number {
-  const baseCost = price.baseCost ?? 0;
-  const expense = baseCost * (price.operationalExpensePercent / 100);
-  return price.salePrice - baseCost - expense;
+  return price.salePrice - (price.baseCost ?? 0);
 }
 
 export function PriceList({ prices, onEdit, onDelete }: Props) {
@@ -41,7 +40,7 @@ export function PriceList({ prices, onEdit, onDelete }: Props) {
   const chips: { key: Filter; label: string }[] = [
     { key: 'all', label: 'Todos' },
     { key: 'negative', label: `Lucro negativo · ${negativeCount}` },
-    { key: 'lowMargin', label: `Margem abaixo de 60% · ${lowMarginCount}` },
+    { key: 'lowMargin', label: `Markup abaixo de 60% · ${lowMarginCount}` },
   ];
 
   return (
@@ -85,7 +84,7 @@ export function PriceList({ prices, onEdit, onDelete }: Props) {
                   <th className="px-4 py-3">Produto</th>
                   <th className="px-4 py-3 text-right">Custo</th>
                   <th className="px-4 py-3 text-right">Despesa</th>
-                  <th className="px-4 py-3">Margem</th>
+                  <th className="px-4 py-3">Markup</th>
                   <th className="px-4 py-3 text-right">Preço de venda</th>
                   <th className="px-4 py-3 text-right">Lucro</th>
                   <th className="px-4 py-3 text-right">Ações</th>

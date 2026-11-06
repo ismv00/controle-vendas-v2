@@ -202,7 +202,7 @@ export default function ProductsPage() {
       <Modal
         open={open}
         title={editingProduct ? 'Editar produto' : 'Novo produto'}
-        subtitle="Informe custo e margem — o preço de venda é sugerido."
+        subtitle="Informe o custo e o markup, ou edite o preço de venda direto."
         maxWidth={560}
         onClose={() => {
           setOpen(false);

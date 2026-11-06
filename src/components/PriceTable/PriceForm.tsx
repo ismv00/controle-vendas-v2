@@ -23,21 +23,50 @@ export function PriceForm({ products, initialData, onSubmit, onCancel }: Props) 
     () => initialData?.operationalExpensePercent ?? 0
   );
   const [marginPercent, setMarginPercent] = useState(() => initialData?.marginPercent ?? 0);
+  const [salePriceInput, setSalePriceInput] = useState(() => String(initialData?.salePrice ?? 0));
 
   const formKey = initialData?.id ?? 'new';
 
+  // Sempre lê o custo bruto direto do produto — nunca do preço já salvo (que já tem a
+  // despesa embutida), senão a despesa acaba sendo aplicada de novo a cada edição.
   const cost = useMemo(() => {
-    if (initialData) return initialData.baseCost;
-    if (productId) return products.find((p) => p.id === productId)?.cost ?? 0;
-    return 0;
-  }, [initialData, productId, products]);
+    if (!productId) return 0;
+    return products.find((p) => p.id === productId)?.cost ?? 0;
+  }, [productId, products]);
 
   const baseCost = useMemo(
     () => cost + cost * (operationalExpensePercent / 100),
     [cost, operationalExpensePercent]
   );
 
-  const salePrice = useMemo(() => baseCost + baseCost * (marginPercent / 100), [baseCost, marginPercent]);
+  const salePrice = Number(salePriceInput) || 0;
+
+  // Despesa muda mantendo o markup fixo (recalcula o preço). Markup e Preço de venda se
+  // alimentam um do outro: editar qualquer um dos dois recalcula o outro na hora.
+  function handleExpenseChange(value: number) {
+    setOperationalExpensePercent(value);
+    const newBaseCost = cost + cost * (value / 100);
+    setSalePriceInput((newBaseCost + newBaseCost * (marginPercent / 100)).toFixed(2));
+  }
+
+  function handleMarginChange(value: number) {
+    setMarginPercent(value);
+    setSalePriceInput((baseCost + baseCost * (value / 100)).toFixed(2));
+  }
+
+  function handleSalePriceChange(value: string) {
+    setSalePriceInput(value);
+    const newPrice = Number(value) || 0;
+    const newMargin = baseCost > 0 ? ((newPrice - baseCost) / baseCost) * 100 : 0;
+    setMarginPercent(Number(newMargin.toFixed(2)));
+  }
+
+  function handleProductChange(value: string) {
+    setProductId(value);
+    const newCost = products.find((p) => p.id === value)?.cost ?? 0;
+    const newBaseCost = newCost + newCost * (operationalExpensePercent / 100);
+    setSalePriceInput((newBaseCost + newBaseCost * (marginPercent / 100)).toFixed(2));
+  }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -68,7 +97,7 @@ export function PriceForm({ products, initialData, onSubmit, onCancel }: Props) 
           <select
             className={inputClass}
             value={productId}
-            onChange={(e) => setProductId(e.target.value)}
+            onChange={(e) => handleProductChange(e.target.value)}
             required
             disabled={!!initialData}
           >
@@ -94,18 +123,18 @@ export function PriceForm({ products, initialData, onSubmit, onCancel }: Props) 
               step="0.01"
               className={inputClass}
               value={operationalExpensePercent}
-              onChange={(e) => setOperationalExpensePercent(Number(e.target.value))}
+              onChange={(e) => handleExpenseChange(Number(e.target.value))}
             />
           </div>
 
           <div>
-            <label className={labelClass}>Margem (%)</label>
+            <label className={labelClass}>Markup (%)</label>
             <input
               type="number"
               step="0.01"
               className={inputClass}
               value={marginPercent}
-              onChange={(e) => setMarginPercent(Number(e.target.value))}
+              onChange={(e) => handleMarginChange(Number(e.target.value))}
             />
           </div>
         </div>
@@ -114,9 +143,19 @@ export function PriceForm({ products, initialData, onSubmit, onCancel }: Props) 
           <p className="text-[12px] text-ink-2">Custo real (custo + despesa)</p>
           <p className="mt-0.5 font-mono text-[13px] font-medium text-ink">{formatBRL(baseCost)}</p>
 
-          <p className="mt-2 text-[12px] text-ink-2">Preço de venda</p>
-          <p className="mt-0.5 font-mono text-[18px] font-semibold text-[#14663f]">
-            {formatBRL(salePrice)}
+          <label className="mt-3 block text-[12px] text-ink-2">Preço de venda</label>
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-[18px] font-semibold text-[#14663f]">R$</span>
+            <input
+              type="number"
+              step="0.01"
+              className="w-full border-none bg-transparent font-mono text-[18px] font-semibold text-[#14663f] focus:outline-none"
+              value={salePriceInput}
+              onChange={(e) => handleSalePriceChange(e.target.value)}
+            />
+          </div>
+          <p className="mt-1 text-[11px] text-ink-4">
+            Altere o preço direto aqui, ou o markup acima — um recalcula o outro.
           </p>
         </div>
       </div>

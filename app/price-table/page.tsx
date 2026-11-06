@@ -153,7 +153,7 @@ export default function PriceTablePage() {
       <Modal
         open={open}
         title={editingPrice ? 'Editar preço' : 'Novo preço'}
-        subtitle="Informe custo e margem — o preço de venda é sugerido."
+        subtitle="Informe o custo e o markup, ou edite o preço de venda direto."
         maxWidth={560}
         onClose={() => {
           setOpen(false);

@@ -104,7 +104,7 @@ export function ProductForm({ onSubmit, onCancel, initialData, initialPrice, ins
     [costNumber, expenseNumber]
   );
 
-  // Custo/Despesa mudam mantendo a margem fixa (recalcula o preço). Margem e Preço de venda
+  // Custo/Despesa mudam mantendo o markup fixo (recalcula o preço). Markup e Preço de venda
   // se alimentam um do outro: editar qualquer um dos dois recalcula o outro na hora.
   function handleCostChange(value: string) {
     setCost(value);
@@ -333,7 +333,7 @@ export function ProductForm({ onSubmit, onCancel, initialData, initialPrice, ins
           </div>
 
           <div>
-            <label className={labelClass}>Margem (%)</label>
+            <label className={labelClass}>Markup (%)</label>
             <input
               type="number"
               step="0.01"
